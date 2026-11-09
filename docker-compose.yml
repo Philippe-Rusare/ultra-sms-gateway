@@ -18,7 +18,8 @@ services:
 
   gateway:
     build: .
-    image: ultra-sms-gateway:local
+    # Locally: built from the sources. In production, Jenkins sets GATEWAY_IMAGE to the image published on Docker Hub.
+    image: ${GATEWAY_IMAGE:-ultra-sms-gateway:local}
     depends_on:
       postgres:
         condition: service_healthy

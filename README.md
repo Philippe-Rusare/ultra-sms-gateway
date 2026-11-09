@@ -1,5 +1,7 @@
 # Ultra SMS Gateway
 
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+
 Send SMS from your own applications through Android phones and their SIM cards, at the price of your
 operator's SMS bundles instead of the price of a commercial SMS API.
 
@@ -38,7 +40,7 @@ Ultra SMS Gateway is a small self-hosted server:
 Requirements: Docker with Docker Compose.
 
 ```bash
-git clone <this repository> ultra-sms-gateway
+git clone https://github.com/Philippe-Rusare/ultra-sms-gateway.git
 cd ultra-sms-gateway
 cp .env.example .env        # then edit the passwords
 docker compose up -d --build
@@ -91,6 +93,7 @@ All settings are environment variables (see [`application.yaml`](src/main/resour
 - [HTTP API](docs/api.md): endpoints, statuses, errors, idempotency.
 - [Device protocol](docs/device-protocol.md): the WebSocket protocol the Android app implements.
 - [Architecture](docs/architecture.md): queue, state machine, timeouts and current limits.
+- [Continuous integration](docs/ci.md): the Jenkins pipeline that tests, analyses, publishes and deploys.
 - [Contributing](CONTRIBUTING.md): development setup and how to propose changes.
 
 ## Development

@@ -13,6 +13,11 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>ultra-sms-gateway</name>
     <description>Self-hosted SMS gateway: an HTTP API and dashboard that send SMS through Android phones and their SIM cards.</description>
+    <url>https://github.com/Philippe-Rusare/ultra-sms-gateway</url>
+    <scm>
+        <url>https://github.com/Philippe-Rusare/ultra-sms-gateway</url>
+        <connection>scm:git:https://github.com/Philippe-Rusare/ultra-sms-gateway.git</connection>
+    </scm>
     <licenses>
         <license>
             <name>Apache License, Version 2.0</name>
@@ -121,6 +126,26 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <!-- Test coverage report (target/site/jacoco/jacoco.xml), read by SonarQube in the Jenkins pipeline. -->
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.15</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
