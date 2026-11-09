@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments :: head('Messages')}"></head>
+<body>
+<header th:replace="~{fragments :: nav('messages')}"></header>
+<main>
+    <h1>Messages</h1>
+
+    <form th:action="@{/messages}" method="get" class="filters">
+        <label>Status
+            <select name="status">
+                <option value="">All</option>
+                <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}" th:selected="${s == status}">QUEUED</option>
+            </select>
+        </label>
+        <label>Recipient <input type="search" name="recipient" th:value="${recipient}" placeholder="+243…"></label>
+        <button type="submit">Filter</button>
+    </form>
+
+    <p th:if="${page.empty}" class="muted">No message.</p>
+    <table th:unless="${page.empty}">
+        <thead>
+        <tr><th>Created</th><th>Recipient</th><th>Status</th><th>Client</th><th>Device</th><th class="num">Attempts</th><th>Reason</th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="m : ${page.content}">
+            <td><a th:href="@{/messages/{id}(id=${m.id})}" th:text="${@fmt.dateTime(m.createdAt)}">2026-01-01</a></td>
+            <td class="mono" th:text="${m.recipient}">+243…</td>
+            <td><span th:replace="~{fragments :: status(${m.status.name()})}"></span></td>
+            <td th:text="${apiKeyNames[m.apiKeyId]} ?: '—'">app</td>
+            <td th:text="${m.deviceId} != null ? (${deviceNames[m.deviceId]} ?: '—') : '—'">phone</td>
+            <td class="num" th:text="${m.attempts}">1</td>
+            <td class="mono small" th:text="${m.failureReason} ?: ''"></td>
+        </tr>
+        </tbody>
+    </table>
+
+    <nav class="pager" th:if="${page.totalPages > 1}">
+        <a th:if="${page.hasPrevious()}"
+           th:href="@{/messages(status=${status}, recipient=${recipient}, page=${page.number - 1})}">← Newer</a>
+        <span th:text="'Page ' + ${page.number + 1} + ' of ' + ${page.totalPages}">Page 1 of 1</span>
+        <a th:if="${page.hasNext()}"
+           th:href="@{/messages(status=${status}, recipient=${recipient}, page=${page.number + 1})}">Older →</a>
+    </nav>
+</main>
+</body>
+</html>

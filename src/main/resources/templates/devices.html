@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments :: head('Devices')}"></head>
+<body>
+<header th:replace="~{fragments :: nav('devices')}"></header>
+<main>
+    <h1>Devices</h1>
+    <p class="muted">Each Android phone connects with its own token. Enter the server URL and the token in the app.</p>
+
+    <div th:replace="~{fragments :: error}"></div>
+    <div th:replace="~{fragments :: issued('Device token')}"></div>
+
+    <dl class="details">
+        <dt>Server URL</dt><dd><code th:text="${serverUrl}">ws://localhost:8080/v1/device/ws</code></dd>
+    </dl>
+
+    <form th:action="@{/devices}" method="post" class="inline-form">
+        <input type="text" name="name" maxlength="100" placeholder="e.g. Vodacom phone 1" required>
+        <button type="submit">Add device</button>
+    </form>
+
+    <p th:if="${#lists.isEmpty(devices)}" class="muted">No device yet.</p>
+    <table th:unless="${#lists.isEmpty(devices)}">
+        <thead>
+        <tr><th>Name</th><th>Token</th><th>State</th><th>Operator</th><th>Network</th><th class="num">Signal</th>
+            <th class="num">Battery</th><th>App</th><th>Last seen</th><th></th></tr>
+        </thead>
+        <tbody>
+        <tr th:each="view : ${devices}" th:with="d=${view.device}">
+            <td th:text="${d.name}">Phone</td>
+            <td class="mono small" th:text="${d.tokenPrefix} + '…'">usgd_…</td>
+            <td>
+                <span th:if="${!d.active}" class="badge status-failed">Revoked</span>
+                <span th:if="${d.active and view.online}" class="badge status-delivered">Online</span>
+                <span th:if="${d.active and !view.online}" class="badge status-expired">Offline</span>
+            </td>
+            <td th:text="${d.operatorName} ?: '—'">—</td>
+            <td th:text="${d.networkType} ?: '—'">—</td>
+            <td class="num" th:text="${d.signalLevel} != null ? ${d.signalLevel} + ' / 4' : '—'">—</td>
+            <td class="num">
+                <span th:text="${d.batteryLevel} != null ? ${d.batteryLevel} + ' %' : '—'">—</span>
+                <span th:if="${d.charging}" title="Charging">⚡</span>
+            </td>
+            <td th:text="${d.appVersion} ?: '—'">—</td>
+            <td th:text="${@fmt.dateTime(d.lastSeenAt)}">—</td>
+            <td>
+                <form th:if="${d.active}" th:action="@{/devices/{id}/revoke(id=${d.id})}" method="post"
+                      onsubmit="return confirm('Revoke this device? It will be disconnected.');">
+                    <button type="submit" class="danger small">Revoke</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>

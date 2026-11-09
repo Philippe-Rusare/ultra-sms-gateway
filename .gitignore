@@ -1,0 +1,66 @@
+### Build ###
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### Secrets and local configuration ###
+.env
+.env.*
+!.env.example
+application-local.yaml
+application-local.yml
+*.pem
+*.key
+*.p12
+*.jks
+
+### AI assistants (local memory, settings and notes) ###
+.claude/
+CLAUDE.local.md
+.cursor/
+.aider*
+.continue/
+.windsurf/
+
+### Logs and temporary files ###
+*.log
+logs/
+*.tmp
+*.swp
+*~
+HELP.md
+
+### OS ###
+.DS_Store
+Thumbs.db
+desktop.ini
+
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+### Eclipse / STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments :: head('Overview')}"></head>
+<body>
+<header th:replace="~{fragments :: nav('overview')}"></header>
+<main>
+    <h1>Overview</h1>
+
+    <section class="tiles">
+        <div class="tile">
+            <span class="tile-label">Waiting in queue</span>
+            <span class="tile-value" th:text="${queuedNow}">0</span>
+        </div>
+        <div class="tile">
+            <span class="tile-label">Messages, last 24 h</span>
+            <span class="tile-value" th:text="${total24h}">0</span>
+        </div>
+        <div class="tile">
+            <span class="tile-label">Devices online</span>
+            <span class="tile-value"
+                  th:text="${#lists.size(devices.?[online])} + ' / ' + ${#lists.size(devices)}">0 / 0</span>
+        </div>
+    </section>
+
+    <h2>Last 24 hours by status</h2>
+    <table>
+        <thead><tr><th>Status</th><th class="num">Messages</th></tr></thead>
+        <tbody>
+        <tr th:each="entry : ${counts}">
+            <td>
+                <a th:href="@{/messages(status=${entry.key})}">
+                    <span th:replace="~{fragments :: status(${entry.key.name()})}"></span>
+                </a>
+            </td>
+            <td class="num" th:text="${entry.value}">0</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <h2>Devices</h2>
+    <p th:if="${#lists.isEmpty(devices)}" class="muted">
+        No device yet. <a th:href="@{/devices}">Add one</a>, then enter its token in the Android app.
+    </p>
+    <table th:unless="${#lists.isEmpty(devices)}">
+        <thead><tr><th>Name</th><th>State</th><th>Operator</th><th class="num">Battery</th><th>Last seen</th></tr></thead>
+        <tbody>
+        <tr th:each="view : ${devices}" th:with="d=${view.device}">
+            <td th:text="${d.name}">Phone</td>
+            <td>
+                <span th:if="${!d.active}" class="badge status-failed">Revoked</span>
+                <span th:if="${d.active and view.online}" class="badge status-delivered">Online</span>
+                <span th:if="${d.active and !view.online}" class="badge status-expired">Offline</span>
+            </td>
+            <td th:text="${d.operatorName} ?: '—'">Vodacom</td>
+            <td class="num" th:text="${d.batteryLevel} != null ? ${d.batteryLevel} + ' %' : '—'">80 %</td>
+            <td th:text="${@fmt.dateTime(d.lastSeenAt)}">—</td>
+        </tr>
+        </tbody>
+    </table>
+    <p class="muted small">Times are shown in <span th:text="${@fmt.zone()}">UTC</span>.</p>
+</main>
+</body>
+</html>

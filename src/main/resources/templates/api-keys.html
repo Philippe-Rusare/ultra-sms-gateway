@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments :: head('API keys')}"></head>
+<body>
+<header th:replace="~{fragments :: nav('api-keys')}"></header>
+<main>
+    <h1>API keys</h1>
+    <p class="muted">One key per client application. Send it in the <code>X-Api-Key</code> header.</p>
+
+    <div th:replace="~{fragments :: error}"></div>
+    <div th:replace="~{fragments :: issued('API key')}"></div>
+
+    <form th:action="@{/api-keys}" method="post" class="inline-form">
+        <input type="text" name="name" maxlength="100" placeholder="e.g. notification-service" required>
+        <button type="submit">Create key</button>
+    </form>
+
+    <p th:if="${#lists.isEmpty(apiKeys)}" class="muted">No API key yet.</p>
+    <table th:unless="${#lists.isEmpty(apiKeys)}">
+        <thead><tr><th>Name</th><th>Key</th><th>State</th><th>Created</th><th>Last used</th><th></th></tr></thead>
+        <tbody>
+        <tr th:each="k : ${apiKeys}">
+            <td th:text="${k.name}">app</td>
+            <td class="mono small" th:text="${k.keyPrefix} + '…'">usg_…</td>
+            <td>
+                <span th:if="${k.active}" class="badge status-delivered">Active</span>
+                <span th:unless="${k.active}" class="badge status-failed">Revoked</span>
+            </td>
+            <td th:text="${@fmt.dateTime(k.createdAt)}">—</td>
+            <td th:text="${@fmt.dateTime(k.lastUsedAt)}">—</td>
+            <td>
+                <form th:if="${k.active}" th:action="@{/api-keys/{id}/revoke(id=${k.id})}" method="post"
+                      onsubmit="return confirm('Revoke this key? Applications using it will get 401.');">
+                    <button type="submit" class="danger small">Revoke</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>

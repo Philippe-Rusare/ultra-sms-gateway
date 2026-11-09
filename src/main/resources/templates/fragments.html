@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:fragment="head(title)">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title} + ' · Ultra SMS Gateway'">Ultra SMS Gateway</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header th:fragment="nav(active)" class="topbar">
+    <a class="brand" th:href="@{/}">Ultra SMS Gateway</a>
+    <nav>
+        <a th:href="@{/}" th:classappend="${active == 'overview'} ? 'active'">Overview</a>
+        <a th:href="@{/messages}" th:classappend="${active == 'messages'} ? 'active'">Messages</a>
+        <a th:href="@{/devices}" th:classappend="${active == 'devices'} ? 'active'">Devices</a>
+        <a th:href="@{/api-keys}" th:classappend="${active == 'api-keys'} ? 'active'">API keys</a>
+        <a th:href="@{/swagger-ui.html}">API docs</a>
+    </nav>
+    <form th:action="@{/logout}" method="post">
+        <button type="submit" class="link">Sign out</button>
+    </form>
+</header>
+
+<span th:fragment="status(value)" class="badge" th:classappend="'status-' + ${#strings.toLowerCase(value)}"
+      th:text="${value}">QUEUED</span>
+
+<div th:fragment="issued(label)" th:if="${issuedSecret}" class="notice">
+    <strong th:text="${label} + ' created for ' + ${issuedName} + '.'">Created.</strong>
+    Copy it now: it will not be shown again.
+    <code class="secret" th:text="${issuedSecret}">secret</code>
+</div>
+
+<div th:fragment="error" th:if="${error}" class="notice notice-error" th:text="${error}">Error</div>
+</body>
+</html>

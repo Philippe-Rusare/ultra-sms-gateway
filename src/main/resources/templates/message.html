@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments :: head('Message')}"></head>
+<body>
+<header th:replace="~{fragments :: nav('messages')}"></header>
+<main>
+    <p><a th:href="@{/messages}">← Messages</a></p>
+    <h1>Message <span class="mono small" th:text="${message.id}">id</span></h1>
+
+    <dl class="details">
+        <dt>Status</dt><dd><span th:replace="~{fragments :: status(${message.status.name()})}"></span></dd>
+        <dt>Recipient</dt><dd class="mono" th:text="${message.recipient}">+243…</dd>
+        <dt>Text</dt>
+        <dd>
+            <span class="muted" th:text="${message.bodyLength} + ' characters, '
+                + (${message.body} != null ? 'not shown' : 'erased after sending')">not shown</span>
+        </dd>
+        <dt>Client</dt><dd th:text="${apiKeyNames[message.apiKeyId]} ?: '—'">app</dd>
+        <dt>Client reference</dt><dd class="mono" th:text="${message.clientReference} ?: '—'">—</dd>
+        <dt>Device</dt><dd th:text="${message.deviceId} != null ? (${deviceNames[message.deviceId]} ?: '—') : '—'">—</dd>
+        <dt>Attempts</dt><dd th:text="${message.attempts}">0</dd>
+        <dt>Failure reason</dt><dd class="mono" th:text="${message.failureReason} ?: '—'">—</dd>
+        <dt>Created</dt><dd th:text="${@fmt.dateTime(message.createdAt)}">—</dd>
+        <dt>Expires</dt><dd th:text="${@fmt.dateTime(message.expiresAt)}">—</dd>
+        <dt>Sent</dt><dd th:text="${@fmt.dateTime(message.sentAt)}">—</dd>
+        <dt>Delivered</dt><dd th:text="${@fmt.dateTime(message.deliveredAt)}">—</dd>
+    </dl>
+
+    <h2>History</h2>
+    <table>
+        <thead><tr><th>Time</th><th>Status</th><th>Device</th><th>Detail</th></tr></thead>
+        <tbody>
+        <tr th:each="e : ${events}">
+            <td th:text="${@fmt.dateTime(e.createdAt)}">—</td>
+            <td><span th:replace="~{fragments :: status(${e.status.name()})}"></span></td>
+            <td th:text="${e.deviceId} != null ? (${deviceNames[e.deviceId]} ?: '—') : '—'">—</td>
+            <td class="mono small" th:text="${e.detail} ?: ''"></td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>

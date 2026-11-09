@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments :: head('Sign in')}"></head>
+<body class="centered">
+<main class="card login">
+    <h1>Ultra SMS Gateway</h1>
+    <p th:if="${param.error}" class="notice notice-error">Wrong username or password.</p>
+    <p th:if="${param.logout}" class="notice">You are signed out.</p>
+    <form th:action="@{/login}" method="post" class="stack">
+        <label>Username <input type="text" name="username" autocomplete="username" required autofocus></label>
+        <label>Password <input type="password" name="password" autocomplete="current-password" required></label>
+        <button type="submit">Sign in</button>
+    </form>
+</main>
+</body>
+</html>
