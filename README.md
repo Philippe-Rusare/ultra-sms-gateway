@@ -21,8 +21,12 @@ Ultra SMS Gateway is a small self-hosted server:
                                             PostgreSQL
 ```
 
-> **Status:** early development. The server works and is tested; the Android app is the next milestone.
+> **Status:** early development. The server and the [Android app](https://github.com/Philippe-Rusare/ultra-sms-gateway-android) work and are tested.
 > See [Roadmap](#roadmap).
+
+This repository is the server. The phone side is the **Android app**, in its own repository:
+[ultra-sms-gateway-android](https://github.com/Philippe-Rusare/ultra-sms-gateway-android) (download the APK from its
+[releases](https://github.com/Philippe-Rusare/ultra-sms-gateway-android/releases)).
 
 ## Screenshots
 
@@ -69,7 +73,8 @@ docker compose up -d --build
 Open <http://localhost:8080> and sign in with `GATEWAY_ADMIN_USERNAME` / `GATEWAY_ADMIN_PASSWORD`.
 
 1. **API keys → Create key.** Copy the key, it is shown only once.
-2. **Devices → Add device.** Copy the server URL and the device token into the Android app.
+2. **Devices → Add device.** Install the [Android app](https://github.com/Philippe-Rusare/ultra-sms-gateway-android/releases) on a phone with a SIM card, then
+   copy the server URL and the device token into it.
 3. Queue a message:
 
 ```bash
@@ -111,7 +116,7 @@ All settings are environment variables (see [`application.yaml`](src/main/resour
 ## Documentation
 
 - [HTTP API](docs/api.md): endpoints, statuses, errors, idempotency.
-- [Device protocol](docs/device-protocol.md): the WebSocket protocol the Android app implements.
+- [Device protocol](docs/device-protocol.md): the WebSocket protocol the [Android app](https://github.com/Philippe-Rusare/ultra-sms-gateway-android) implements.
 - [Architecture](docs/architecture.md): queue, state machine, timeouts and current limits.
 - [Continuous integration](docs/ci.md): the Jenkins pipeline that tests, analyses, publishes and deploys.
 - [Contributing](CONTRIBUTING.md): development setup and how to propose changes.
@@ -147,7 +152,7 @@ the in-memory H2 database and must never be exposed to others.
 ## Roadmap
 
 1. **Server v1** (this repository): API, queue, WebSocket channel, dashboard. ✅
-2. **Android app**: minimal configuration screen, foreground service, sending with `SmsManager`, reports.
+2. **[Android app](https://github.com/Philippe-Rusare/ultra-sms-gateway-android)**: configuration screen, foreground service, sending with `SmsManager`, reports. ✅
 3. Routing by operator prefix across several phones; fallback to a commercial SMS provider; webhooks.
 4. Several gateway instances (shared session registry), metrics.
 
