@@ -4,11 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title th:text="${title} + ' · Ultra SMS Gateway'">Ultra SMS Gateway</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/img/logo.svg}">
     <link rel="stylesheet" th:href="@{/css/app.css}">
 </head>
 <body>
 <header th:fragment="nav(active)" class="topbar">
-    <a class="brand" th:href="@{/}">Ultra SMS Gateway</a>
+    <a class="brand" th:href="@{/}"><img th:src="@{/img/logo.svg}" alt="">Ultra SMS Gateway</a>
     <nav>
         <a th:href="@{/}" th:classappend="${active == 'overview'} ? 'active'">Overview</a>
         <a th:href="@{/messages}" th:classappend="${active == 'messages'} ? 'active'">Messages</a>

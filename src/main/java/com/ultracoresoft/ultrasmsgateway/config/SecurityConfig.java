@@ -62,7 +62,7 @@ class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/login", "/css/**", "/error").permitAll()
+                        .requestMatchers("/login", "/css/**", "/img/**", "/error").permitAll()
                         .anyRequest().hasRole("ADMIN"))
                 .formLogin(form -> form.loginPage("/login").defaultSuccessUrl("/", true))
                 .logout(logout -> logout.logoutSuccessUrl("/login?logout"))
