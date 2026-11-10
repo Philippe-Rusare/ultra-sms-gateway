@@ -23,14 +23,15 @@ GATEWAY_ADMIN_PASSWORD=dev DB_PASSWORD=<from .env> ./mvnw spring-boot:run
 
 The dashboard is then at <http://localhost:8080>, the API documentation at `/swagger-ui.html`.
 
-To try the device side without a phone, any WebSocket client can act as a device, for example
-[websocat](https://github.com/vi/websocat):
+To try the device side without a phone, `tools/FakeDevice.java` connects like the Android app and
+answers every `send` frame with `ack`, `sent` and `delivered` (no dependency, JDK 21+):
 
 ```bash
-websocat -H "Authorization: Bearer usgd_..." ws://localhost:8080/v1/device/ws
+java tools/FakeDevice.java ws://localhost:8080/v1/device/ws usgd_... [--fail-every 5]
 ```
 
-then answer the `send` frames by hand (see [docs/device-protocol.md](docs/device-protocol.md)).
+For a dashboard full of data, start with the `demo` profile instead
+(see [Try it without a phone](README.md#try-it-without-a-phone)).
 
 ## Guidelines
 

@@ -24,6 +24,26 @@ Ultra SMS Gateway is a small self-hosted server:
 > **Status:** early development. The server works and is tested; the Android app is the next milestone.
 > See [Roadmap](#roadmap).
 
+## Screenshots
+
+![Overview: tiles and messages by outcome over the last 14 days](docs/screenshots/overview.png)
+
+| | |
+|---|---|
+| ![Sign-in page](docs/screenshots/login.png) | ![Messages with filters by status and recipient](docs/screenshots/messages.png) |
+| **Sign in** | **Messages**, filtered by status or recipient |
+| ![Message detail with its full history](docs/screenshots/message-detail.png) | ![Phones with their state, operator, signal and battery](docs/screenshots/devices.png) |
+| **Message history**: every status change, the text is never shown | **Devices**: online state, operator, signal, battery |
+
+<details>
+<summary>Dark mode</summary>
+
+![Overview in dark mode](docs/screenshots/overview-dark.png)
+
+</details>
+
+The screenshots use the fictitious data of the [demo profile](#try-it-without-a-phone).
+
 ## Features
 
 - Queue with a time to live per message: an OTP that waits too long expires instead of arriving late.
@@ -105,6 +125,24 @@ Requirements: JDK 21 or later. Tests use an in-memory H2 database, no Docker nee
 docker compose up -d postgres  # a local PostgreSQL, then:
 GATEWAY_ADMIN_PASSWORD=dev DB_PASSWORD=<from .env> ./mvnw spring-boot:run
 ```
+
+### Try it without a phone
+
+The `demo` profile starts the server on an in-memory database filled with 14 days of fictitious traffic,
+and `tools/FakeDevice.java` plays the part of a phone (it answers like the Android app, without sending
+any SMS):
+
+```bash
+./mvnw spring-boot:test-run -Dspring-boot.run.profiles=test,demo
+```
+
+```bash
+java tools/FakeDevice.java ws://localhost:8080/v1/device/ws usgd_demo_token_for_local_testing_only_00000000
+```
+
+Sign in at <http://localhost:8080> with `admin` / `test-admin-password`. The demo API key is
+`usg_demo_key_for_local_testing_only_0000000000`. These values are public: the demo profile only runs on
+the in-memory H2 database and must never be exposed to others.
 
 ## Roadmap
 

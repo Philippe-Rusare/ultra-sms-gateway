@@ -13,6 +13,8 @@ import com.ultracoresoft.ultrasmsgateway.message.SmsMessageRepository;
 import jakarta.persistence.criteria.Predicate;
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -41,6 +43,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 class DashboardController {
 
     private static final int PAGE_SIZE = 50;
+    private static final int CHART_DAYS = 14;
     private static final int MAX_NAME_LENGTH = 100;
 
     private final SmsMessageRepository messages;
@@ -49,6 +52,7 @@ class DashboardController {
     private final DeviceSessionRegistry sessions;
     private final ApiKeyService apiKeys;
     private final Clock clock;
+    private final Formats formats;
 
     record DeviceView(Device device, boolean online) {
     }
@@ -70,7 +74,25 @@ class DashboardController {
         model.addAttribute("total24h", counts.values().stream().mapToLong(Long::longValue).sum());
         model.addAttribute("queuedNow", messages.countByStatus(MessageStatus.QUEUED));
         model.addAttribute("devices", deviceViews());
+
+        LocalDate today = LocalDate.now(clock.withZone(formats.zoneId()));
+        Instant chartStart = today.minusDays(CHART_DAYS - 1L).atStartOfDay(formats.zoneId()).toInstant();
+        OverviewChart chart = OverviewChart.build(messages.findCreatedStatusSince(chartStart), today, formats.zoneId(), CHART_DAYS);
+        model.addAttribute("chart", chart);
+        model.addAttribute("chartSeries", OverviewChart.Series.values());
+        model.addAttribute("successRate", successRate(chart.bars().subList(CHART_DAYS - 7, CHART_DAYS)));
         return "overview";
+    }
+
+    /** Share of finished messages that left the phone (sent or delivered), or null without any. */
+    static Integer successRate(List<OverviewChart.Bar> days) {
+        long ok = 0;
+        long finished = 0;
+        for (OverviewChart.Bar day : days) {
+            ok += day.sent() + day.delivered();
+            finished += day.total();
+        }
+        return finished == 0 ? null : (int) Math.round(100.0 * ok / finished);
     }
 
     @GetMapping("/messages")

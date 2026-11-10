@@ -40,4 +40,14 @@ public interface SmsMessageRepository extends JpaRepository<SmsMessage, UUID>, J
 
         Long getTotal();
     }
+
+    /** Creation time and status of recent messages, for the overview chart. */
+    @Query("select m.createdAt as createdAt, m.status as status from SmsMessage m where m.createdAt >= :since")
+    List<CreatedStatus> findCreatedStatusSince(@Param("since") Instant since);
+
+    interface CreatedStatus {
+        Instant getCreatedAt();
+
+        MessageStatus getStatus();
+    }
 }

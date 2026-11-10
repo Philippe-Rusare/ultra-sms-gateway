@@ -16,9 +16,48 @@
             <span class="tile-value" th:text="${total24h}">0</span>
         </div>
         <div class="tile">
+            <span class="tile-label">Success rate, 7 days</span>
+            <span class="tile-value" th:text="${successRate} != null ? ${successRate} + ' %' : '—'">—</span>
+            <span class="tile-note">sent or delivered, among finished messages</span>
+        </div>
+        <div class="tile">
             <span class="tile-label">Devices online</span>
             <span class="tile-value"
                   th:text="${#lists.size(devices.?[online])} + ' / ' + ${#lists.size(devices)}">0 / 0</span>
+        </div>
+    </section>
+
+    <section class="panel chart-panel">
+        <div class="chart-head">
+            <h2>Messages by outcome, last 14 days</h2>
+            <ul class="legend" th:if="${chart.total > 0}">
+                <li th:each="s : ${chartSeries}">
+                    <span class="swatch" th:classappend="'series-' + ${s.cssClass()}"></span>
+                    <span th:text="${s.label()}">Delivered</span>
+                </li>
+            </ul>
+        </div>
+        <p th:if="${chart.total == 0}" class="muted chart-empty">No finished message in the last 14 days.</p>
+        <div class="chart-wrap" th:if="${chart.total > 0}">
+            <svg class="chart" th:attr="viewBox='0 0 ' + ${chart.width} + ' ' + ${chart.height}" role="img"
+                 aria-label="Stacked columns of messages per day over the last 14 days, by outcome. Exact figures by status are in the table below.">
+                <g class="chart-grid">
+                    <line th:each="t : ${chart.ticks}"
+                          th:attr="x1=${chart.plotLeft()},x2=${chart.plotRight()},y1=${t.y},y2=${t.y}"/>
+                </g>
+                <g class="chart-axis-label">
+                    <text th:each="t : ${chart.ticks}" text-anchor="end" dominant-baseline="middle"
+                          th:attr="x=${chart.plotLeft() - 8},y=${t.y}" th:text="${t.label}">0</text>
+                </g>
+                <g th:each="b : ${chart.bars}" class="chart-bar" tabindex="0"
+                   th:attr="data-date=${b.fullDate},data-delivered=${b.delivered},data-sent=${b.sent},data-failed=${b.failed},data-expired=${b.expired},data-total=${b.total()},data-x=${b.centerX}">
+                    <rect class="chart-hit" th:attr="x=${b.hitX},width=${b.hitWidth},y=0,height=${chart.baseline()}"/>
+                    <path th:each="s : ${b.segments}" th:class="'series-' + ${s.series.cssClass()}" th:attr="d=${s.path}"/>
+                    <text th:if="${b.showLabel}" class="chart-axis-label" text-anchor="middle"
+                          th:attr="x=${b.centerX},y=${chart.baseline() + 18}" th:text="${b.dayLabel}">9 Nov</text>
+                </g>
+            </svg>
+            <div class="chart-tooltip" role="status" hidden></div>
         </div>
     </section>
 
@@ -59,5 +98,45 @@
     </table>
     <p class="muted small">Times are shown in <span th:text="${@fmt.zone()}">UTC</span>.</p>
 </main>
+
+<!-- th:inline="none": nested JavaScript arrays must not be read as Thymeleaf inlined expressions. -->
+<script th:inline="none">
+    (function () {
+        var wrap = document.querySelector('.chart-wrap');
+        if (!wrap) return;
+        var svg = wrap.querySelector('svg');
+        var tip = wrap.querySelector('.chart-tooltip');
+        var rows = [['delivered', 'Delivered'], ['sent', 'Sent'], ['failed', 'Failed'], ['expired', 'Expired']];
+
+        function show(bar) {
+            var d = bar.dataset;
+            var html = '<strong>' + d.date + '</strong><table>';
+            rows.forEach(function (row) {
+                html += '<tr><td><span class="swatch series-' + row[0] + '"></span>' + row[1] + '</td><td class="num">' + d[row[0]] + '</td></tr>';
+            });
+            html += '<tr class="tip-total"><td>Total</td><td class="num">' + d.total + '</td></tr></table>';
+            tip.innerHTML = html;
+            tip.hidden = false;
+            var box = svg.getBoundingClientRect();
+            var x = parseFloat(d.x) * box.width / svg.viewBox.baseVal.width;
+            var left = Math.min(Math.max(x - tip.offsetWidth / 2, 0), box.width - tip.offsetWidth);
+            tip.style.left = left + 'px';
+            wrap.querySelectorAll('.chart-bar.active').forEach(function (b) { b.classList.remove('active'); });
+            bar.classList.add('active');
+        }
+
+        function hide() {
+            tip.hidden = true;
+            wrap.querySelectorAll('.chart-bar.active').forEach(function (b) { b.classList.remove('active'); });
+        }
+
+        wrap.querySelectorAll('.chart-bar').forEach(function (bar) {
+            bar.addEventListener('mouseenter', function () { show(bar); });
+            bar.addEventListener('focus', function () { show(bar); });
+            bar.addEventListener('blur', hide);
+        });
+        svg.addEventListener('mouseleave', hide);
+    })();
+</script>
 </body>
 </html>

@@ -25,4 +25,8 @@ public class Formats {
     public String zone() {
         return zone.getId();
     }
+
+    public ZoneId zoneId() {
+        return zone;
+    }
 }

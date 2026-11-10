@@ -55,7 +55,7 @@ class DashboardTest extends IntegrationTest {
 
     @Test
     void everyPageRenders() throws Exception {
-        assertThat(page("/")).contains("Waiting in queue", "dashboard-phone");
+        assertThat(page("/")).contains("Waiting in queue", "dashboard-phone", "Messages by outcome", "series-sent", "100 %");
         assertThat(page("/messages")).contains("+243812345678", "SENT");
         assertThat(page("/messages?status=SENT&recipient=2438")).contains("+243812345678");
         assertThat(page("/messages/" + messageId)).contains("History", "erased after sending", "DISPATCHED");

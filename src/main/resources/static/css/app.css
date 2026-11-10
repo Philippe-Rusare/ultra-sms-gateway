@@ -45,9 +45,12 @@ code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .topbar nav a { color: var(--muted); }
 .topbar nav a.active { color: var(--text); font-weight: 600; }
 
-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; overflow: hidden; display: block; overflow-x: auto; }
-thead, tbody { display: table; width: 100%; border-collapse: collapse; }
+table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; overflow: hidden; }
+/* Narrow screens: the table scrolls sideways instead of overflowing the page. */
+@media (max-width: 760px) {
+    table { display: block; overflow-x: auto; }
+}
 th, td { padding: 8px 12px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
 th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); font-weight: 600; }
 tbody tr:last-child td { border-bottom: none; }
@@ -64,6 +67,51 @@ tbody tr:last-child td { border-bottom: none; }
     display: flex; flex-direction: column; gap: 4px; }
 .tile-label { color: var(--muted); font-size: 0.85rem; }
 .tile-value { font-size: 1.8rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tile-note { color: var(--muted); font-size: 0.78rem; }
+
+/* ---- Overview chart (palette validated for colour-vision deficiencies, light and dark) ---- */
+:root {
+    --series-delivered: #0ca30c;
+    --series-sent: #2a78d6;
+    --series-failed: #d03b3b;
+    --series-expired: #eda100;
+    --chart-grid: #e8ebef;
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --series-sent: #3987e5;
+        --series-expired: #c98500;
+        --chart-grid: #2a313b;
+    }
+}
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-top: 16px; }
+.chart-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.chart-head h2 { margin: 0; }
+.legend { list-style: none; display: flex; gap: 16px; margin: 0; padding: 0; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); }
+.legend li { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: currentColor; margin-right: 2px; }
+.swatch.series-delivered { background: var(--series-delivered); }
+.swatch.series-sent { background: var(--series-sent); }
+.swatch.series-failed { background: var(--series-failed); }
+.swatch.series-expired { background: var(--series-expired); }
+.chart-empty { margin: 24px 0; text-align: center; }
+.chart-wrap { position: relative; }
+.chart { display: block; width: 100%; height: auto; overflow: visible; }
+.chart-grid line { stroke: var(--chart-grid); stroke-width: 1; shape-rendering: crispEdges; }
+.chart-axis-label, .chart text { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.chart path.series-delivered { fill: var(--series-delivered); }
+.chart path.series-sent { fill: var(--series-sent); }
+.chart path.series-failed { fill: var(--series-failed); }
+.chart path.series-expired { fill: var(--series-expired); }
+.chart-hit { fill: transparent; }
+.chart-bar { outline: none; cursor: default; }
+.chart-bar.active .chart-hit, .chart-bar:focus-visible .chart-hit { fill: var(--chart-grid); opacity: 0.6; }
+.chart-tooltip { position: absolute; top: -8px; transform: translateY(-100%); min-width: 160px; pointer-events: none;
+    background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-size: 0.82rem; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12); z-index: 2; }
+.chart-tooltip table { border: none; display: table; width: 100%; margin-top: 4px; background: none; }
+.chart-tooltip td { padding: 2px 0; border: none; }
+.chart-tooltip .tip-total td { border-top: 1px solid var(--border); padding-top: 4px; font-weight: 600; }
 
 input, select { font: inherit; padding: 7px 10px; border: 1px solid var(--border); border-radius: 6px;
     background: var(--surface); color: var(--text); }
