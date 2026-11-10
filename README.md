@@ -26,12 +26,12 @@ Ultra SMS Gateway is a small self-hosted server:
 
 ## Screenshots
 
-![Overview: tiles and messages by outcome over the last 14 days](docs/screenshots/overview.png)
+![Sign-in page](docs/screenshots/login.png)
 
 | | |
 |---|---|
-| ![Sign-in page](docs/screenshots/login.png) | ![Messages with filters by status and recipient](docs/screenshots/messages.png) |
-| **Sign in** | **Messages**, filtered by status or recipient |
+| ![Overview: tiles and messages by outcome over the last 14 days](docs/screenshots/overview.png) | ![Messages with filters by status and recipient](docs/screenshots/messages.png) |
+| **Overview**: messages by outcome over the last 14 days | **Messages**, filtered by status or recipient |
 | ![Message detail with its full history](docs/screenshots/message-detail.png) | ![Phones with their state, operator, signal and battery](docs/screenshots/devices.png) |
 | **Message history**: every status change, the text is never shown | **Devices**: online state, operator, signal, battery |
 
