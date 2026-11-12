@@ -5,9 +5,18 @@ FROM eclipse-temurin:21-jdk AS build
 WORKDIR /workspace
 COPY .mvn/ .mvn/
 COPY mvnw pom.xml ./
-RUN chmod +x mvnw && ./mvnw -B -q dependency:go-offline
 COPY src/ src/
-RUN ./mvnw -B -q package -DskipTests && cp target/ultra-sms-gateway-*.jar app.jar
+# The Maven repository is a BuildKit cache kept between builds: on an unstable network, a build that
+# stops halfway resumes where it stopped instead of downloading everything again. Only what the build
+# needs is downloaded, with more retries and longer timeouts than Maven's defaults.
+RUN --mount=type=cache,target=/root/.m2 \
+    chmod +x mvnw && \
+    ./mvnw -B -q -DskipTests \
+      -Daether.connector.http.retryHandler.count=6 \
+      -Daether.connector.connectTimeout=30000 \
+      -Daether.connector.requestTimeout=180000 \
+      package && \
+    cp target/ultra-sms-gateway-*.jar app.jar
 
 # ---- Run ----
 FROM eclipse-temurin:21-jre
