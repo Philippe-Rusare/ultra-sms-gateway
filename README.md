@@ -1,6 +1,7 @@
 # Ultra SMS Gateway
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![Docker image](https://img.shields.io/docker/v/philipperusare/ultra-sms-gateway?sort=semver&label=docker%20image)](https://hub.docker.com/r/philipperusare/ultra-sms-gateway)
 
 Send SMS from your own applications through Android phones and their SIM cards, at the price of your
 operator's SMS bundles instead of the price of a commercial SMS API.
@@ -61,13 +62,19 @@ The screenshots use the fictitious data of the [demo profile](#try-it-without-a-
 
 ## Quick start
 
-Requirements: Docker with Docker Compose.
+Requirements: Docker with Docker Compose. No need to clone the repository: the gateway is published on
+Docker Hub as [`philipperusare/ultra-sms-gateway`](https://hub.docker.com/r/philipperusare/ultra-sms-gateway).
 
 ```bash
-git clone https://github.com/Philippe-Rusare/ultra-sms-gateway.git
-cd ultra-sms-gateway
-cp .env.example .env        # then edit the passwords
-docker compose up -d --build
+mkdir ultra-sms-gateway && cd ultra-sms-gateway
+curl -fsSLO https://raw.githubusercontent.com/Philippe-Rusare/ultra-sms-gateway/main/docker-compose.yml
+curl -fsSL https://raw.githubusercontent.com/Philippe-Rusare/ultra-sms-gateway/main/.env.example -o .env
+```
+
+Edit `.env` and set real values for `DB_PASSWORD` and `GATEWAY_ADMIN_PASSWORD`, then:
+
+```bash
+docker compose up -d
 ```
 
 Open <http://localhost:8080> and sign in with `GATEWAY_ADMIN_USERNAME` / `GATEWAY_ADMIN_PASSWORD`.
@@ -92,6 +99,9 @@ curl -X POST http://localhost:8080/v1/messages \
 
 In production, put the gateway behind a reverse proxy that terminates TLS (Caddy, Nginx, Traefik):
 phones then connect to `wss://your-domain/v1/device/ws`.
+
+**Upgrade** to a newer version: set `GATEWAY_IMAGE=philipperusare/ultra-sms-gateway:<version>` in `.env`, then
+`docker compose pull && docker compose up -d`. The database is kept and migrated automatically.
 
 ## Configuration
 

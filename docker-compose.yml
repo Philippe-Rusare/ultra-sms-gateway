@@ -1,5 +1,6 @@
-# Local or single-server deployment: PostgreSQL + the gateway.
-# Copy .env.example to .env and set the passwords first.
+# Ultra SMS Gateway: PostgreSQL + the gateway, from the image published on Docker Hub.
+# Copy .env.example to .env, set the passwords, then: docker compose up -d
+# To build the gateway from the sources instead, see docker-compose.dev.yml.
 services:
   postgres:
     image: postgres:17-alpine
@@ -17,9 +18,8 @@ services:
     restart: unless-stopped
 
   gateway:
-    build: .
-    # Locally: built from the sources. In production, Jenkins sets GATEWAY_IMAGE to the image published on Docker Hub.
-    image: ${GATEWAY_IMAGE:-ultra-sms-gateway:local}
+    # Pinned version: change it (or set GATEWAY_IMAGE in .env) to upgrade, then docker compose pull && docker compose up -d.
+    image: ${GATEWAY_IMAGE:-philipperusare/ultra-sms-gateway:0.1.0}
     depends_on:
       postgres:
         condition: service_healthy

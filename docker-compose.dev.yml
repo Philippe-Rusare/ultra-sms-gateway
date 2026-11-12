@@ -1,0 +1,6 @@
+# Contributors: build the gateway from the sources instead of pulling the published image.
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+services:
+  gateway:
+    build: .
+    image: ultra-sms-gateway:local

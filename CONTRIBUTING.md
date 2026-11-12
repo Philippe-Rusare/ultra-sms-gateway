@@ -23,6 +23,13 @@ GATEWAY_ADMIN_PASSWORD=dev DB_PASSWORD=<from .env> ./mvnw spring-boot:run
 
 The dashboard is then at <http://localhost:8080>, the API documentation at `/swagger-ui.html`.
 
+To run your changes in Docker exactly as they will be deployed, build the image from the sources with
+the development override instead of pulling the published one:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+```
+
 To try the device side without a phone, `tools/FakeDevice.java` connects like the Android app and
 answers every `send` frame with `ack`, `sent` and `delivered` (no dependency, JDK 21+):
 
