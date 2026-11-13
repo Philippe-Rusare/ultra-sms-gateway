@@ -3,6 +3,7 @@ package com.ultracoresoft.ultrasmsgateway.api;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.ultracoresoft.ultrasmsgateway.IntegrationTest;
+import com.ultracoresoft.ultrasmsgateway.organization.Organization;
 import java.net.http.HttpResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -14,7 +15,7 @@ class MessageApiTest extends IntegrationTest {
 
     @BeforeEach
     void createKey() {
-        apiKey = apiKeys.create("test-client").secret();
+        apiKey = apiKeys.create(Organization.DEFAULT_ID, "test-client").secret();
     }
 
     @Test
@@ -35,8 +36,8 @@ class MessageApiTest extends IntegrationTest {
 
     @Test
     void rejectsRevokedApiKey() throws Exception {
-        var issued = apiKeys.create("revoked-client");
-        apiKeys.revoke(issued.value().getId());
+        var issued = apiKeys.create(Organization.DEFAULT_ID, "revoked-client");
+        apiKeys.revoke(Organization.DEFAULT_ID, issued.value().getId());
         HttpResponse<String> response = post("/v1/messages", issued.secret(), """
                 {"to":"+243812345678","body":"Hello"}""");
         assertThat(response.statusCode()).isEqualTo(401);
@@ -89,7 +90,7 @@ class MessageApiTest extends IntegrationTest {
     void anotherClientCannotReadTheMessage() throws Exception {
         HttpResponse<String> created = post("/v1/messages", apiKey, """
                 {"to":"+243812345678","body":"Hello"}""");
-        String otherKey = apiKeys.create("other-client").secret();
+        String otherKey = apiKeys.create(Organization.DEFAULT_ID, "other-client").secret();
         HttpResponse<String> fetched = get("/v1/messages/" + parse(created.body()).path("id").asString(), otherKey);
         assertThat(fetched.statusCode()).isEqualTo(404);
     }

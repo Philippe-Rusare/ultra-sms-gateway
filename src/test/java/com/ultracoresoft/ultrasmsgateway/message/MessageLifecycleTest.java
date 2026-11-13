@@ -3,7 +3,9 @@ package com.ultracoresoft.ultrasmsgateway.message;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.ultracoresoft.ultrasmsgateway.IntegrationTest;
+import com.ultracoresoft.ultrasmsgateway.apikey.ApiKeyPrincipal;
 import com.ultracoresoft.ultrasmsgateway.device.DeviceService;
+import com.ultracoresoft.ultrasmsgateway.organization.Organization;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
@@ -20,19 +22,20 @@ class MessageLifecycleTest extends IntegrationTest {
     @Autowired
     DeviceService devices;
 
-    UUID apiKeyId;
+    ApiKeyPrincipal client;
     UUID deviceId;
     UUID otherDeviceId;
 
     @BeforeEach
     void setUp() {
-        apiKeyId = apiKeys.create("lifecycle").value().getId();
-        deviceId = devices.create("phone-a").value().getId();
-        otherDeviceId = devices.create("phone-b").value().getId();
+        client = new ApiKeyPrincipal(
+                apiKeys.create(Organization.DEFAULT_ID, "lifecycle").value().getId(), Organization.DEFAULT_ID, "lifecycle");
+        deviceId = devices.create(Organization.DEFAULT_ID, "phone-a").value().getId();
+        otherDeviceId = devices.create(Organization.DEFAULT_ID, "phone-b").value().getId();
     }
 
     private SmsMessage queue(Integer ttlSeconds) {
-        return service.submit(apiKeyId, new NewMessage("+243812345678", "Your code is 123456", ttlSeconds, null)).message();
+        return service.submit(client, new NewMessage("+243812345678", "Your code is 123456", ttlSeconds, null)).message();
     }
 
     private SmsMessage reload(UUID id) {

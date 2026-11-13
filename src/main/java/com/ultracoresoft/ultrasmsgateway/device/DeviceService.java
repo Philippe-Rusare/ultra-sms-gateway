@@ -22,9 +22,10 @@ public class DeviceService {
     private final Clock clock;
 
     @Transactional
-    public Issued<Device> create(String name) {
+    public Issued<Device> create(UUID organizationId, String name) {
         String token = Secrets.generate(TOKEN_PREFIX);
         Device device = new Device();
+        device.setOrganizationId(organizationId);
         device.setName(name.trim());
         device.setTokenPrefix(Secrets.displayPrefix(token));
         device.setTokenHash(Secrets.hash(token));
@@ -33,11 +34,13 @@ public class DeviceService {
     }
 
     @Transactional
-    public void revoke(UUID id) {
-        repository.findById(id)
+    public void revoke(UUID organizationId, UUID id) {
+        repository.findByIdAndOrganizationId(id, organizationId)
                 .filter(Device::isActive)
-                .ifPresent(device -> device.setRevokedAt(clock.instant()));
-        sessions.disconnect(id);
+                .ifPresent(device -> {
+                    device.setRevokedAt(clock.instant());
+                    sessions.disconnect(id);
+                });
     }
 
     @Transactional(readOnly = true)
@@ -73,8 +76,8 @@ public class DeviceService {
     }
 
     @Transactional(readOnly = true)
-    public List<Device> list() {
-        return repository.findAllByOrderByCreatedAtDesc();
+    public List<Device> list(UUID organizationId) {
+        return repository.findAllByOrganizationIdOrderByCreatedAtDesc(organizationId);
     }
 
     private static Integer clamp(Integer value, int min, int max) {

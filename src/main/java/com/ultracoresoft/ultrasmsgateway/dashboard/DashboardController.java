@@ -10,6 +10,7 @@ import com.ultracoresoft.ultrasmsgateway.message.MessageEventRepository;
 import com.ultracoresoft.ultrasmsgateway.message.MessageStatus;
 import com.ultracoresoft.ultrasmsgateway.message.SmsMessage;
 import com.ultracoresoft.ultrasmsgateway.message.SmsMessageRepository;
+import com.ultracoresoft.ultrasmsgateway.organization.OrganizationContext;
 import jakarta.persistence.criteria.Predicate;
 import java.time.Clock;
 import java.time.Duration;
@@ -37,7 +38,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-/** Administration pages: audit of messages, devices and API keys. */
+/** Administration pages: audit of messages, devices and API keys, always within the current organization. */
 @Controller
 @RequiredArgsConstructor
 class DashboardController {
@@ -53,6 +54,7 @@ class DashboardController {
     private final ApiKeyService apiKeys;
     private final Clock clock;
     private final Formats formats;
+    private final OrganizationContext organization;
 
     record DeviceView(Device device, boolean online) {
     }
@@ -68,16 +70,18 @@ class DashboardController {
         for (MessageStatus status : MessageStatus.values()) {
             counts.put(status, 0L);
         }
-        messages.countByStatusSince(clock.instant().minus(Duration.ofHours(24)))
+        UUID organizationId = organization.currentOrganizationId();
+        messages.countByStatusSince(organizationId, clock.instant().minus(Duration.ofHours(24)))
                 .forEach(row -> counts.put(row.getStatus(), row.getTotal()));
         model.addAttribute("counts", counts);
         model.addAttribute("total24h", counts.values().stream().mapToLong(Long::longValue).sum());
-        model.addAttribute("queuedNow", messages.countByStatus(MessageStatus.QUEUED));
+        model.addAttribute("queuedNow", messages.countByOrganizationIdAndStatus(organizationId, MessageStatus.QUEUED));
         model.addAttribute("devices", deviceViews());
 
         LocalDate today = LocalDate.now(clock.withZone(formats.zoneId()));
         Instant chartStart = today.minusDays(CHART_DAYS - 1L).atStartOfDay(formats.zoneId()).toInstant();
-        OverviewChart chart = OverviewChart.build(messages.findCreatedStatusSince(chartStart), today, formats.zoneId(), CHART_DAYS);
+        OverviewChart chart = OverviewChart.build(
+                messages.findCreatedStatusSince(organizationId, chartStart), today, formats.zoneId(), CHART_DAYS);
         model.addAttribute("chart", chart);
         model.addAttribute("chartSeries", OverviewChart.Series.values());
         model.addAttribute("successRate", successRate(chart.bars().subList(CHART_DAYS - 7, CHART_DAYS)));
@@ -101,7 +105,7 @@ class DashboardController {
                        @RequestParam(defaultValue = "0") int page,
                        Model model) {
         String recipientFilter = recipient == null ? "" : recipient.replaceAll("[^0-9+]", "");
-        Page<SmsMessage> result = messages.findAll(filter(status, recipientFilter),
+        Page<SmsMessage> result = messages.findAll(filter(organization.currentOrganizationId(), status, recipientFilter),
                 PageRequest.of(Math.max(page, 0), PAGE_SIZE, Sort.by(Sort.Direction.DESC, "createdAt")));
         model.addAttribute("page", result);
         model.addAttribute("statuses", MessageStatus.values());
@@ -114,7 +118,7 @@ class DashboardController {
 
     @GetMapping("/messages/{id}")
     String messageDetail(@PathVariable UUID id, Model model) {
-        SmsMessage message = messages.findById(id)
+        SmsMessage message = messages.findByIdAndOrganizationId(id, organization.currentOrganizationId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         model.addAttribute("message", message);
         model.addAttribute("events", events.findByMessageIdOrderByIdAsc(id));
@@ -136,7 +140,7 @@ class DashboardController {
         if (!validName(name, redirect)) {
             return "redirect:/devices";
         }
-        Issued<Device> issued = devices.create(name);
+        Issued<Device> issued = devices.create(organization.currentOrganizationId(), name);
         redirect.addFlashAttribute("issuedName", issued.value().getName());
         redirect.addFlashAttribute("issuedSecret", issued.secret());
         return "redirect:/devices";
@@ -144,13 +148,13 @@ class DashboardController {
 
     @PostMapping("/devices/{id}/revoke")
     String revokeDevice(@PathVariable UUID id) {
-        devices.revoke(id);
+        devices.revoke(organization.currentOrganizationId(), id);
         return "redirect:/devices";
     }
 
     @GetMapping("/api-keys")
     String apiKeyList(Model model) {
-        model.addAttribute("apiKeys", apiKeys.list());
+        model.addAttribute("apiKeys", apiKeys.list(organization.currentOrganizationId()));
         return "api-keys";
     }
 
@@ -159,7 +163,7 @@ class DashboardController {
         if (!validName(name, redirect)) {
             return "redirect:/api-keys";
         }
-        Issued<ApiKey> issued = apiKeys.create(name);
+        Issued<ApiKey> issued = apiKeys.create(organization.currentOrganizationId(), name);
         redirect.addFlashAttribute("issuedName", issued.value().getName());
         redirect.addFlashAttribute("issuedSecret", issued.secret());
         return "redirect:/api-keys";
@@ -167,7 +171,7 @@ class DashboardController {
 
     @PostMapping("/api-keys/{id}/revoke")
     String revokeApiKey(@PathVariable UUID id) {
-        apiKeys.revoke(id);
+        apiKeys.revoke(organization.currentOrganizationId(), id);
         return "redirect:/api-keys";
     }
 
@@ -179,9 +183,10 @@ class DashboardController {
         return true;
     }
 
-    private static Specification<SmsMessage> filter(MessageStatus status, String recipient) {
+    private static Specification<SmsMessage> filter(UUID organizationId, MessageStatus status, String recipient) {
         return (root, query, builder) -> {
             List<Predicate> predicates = new ArrayList<>();
+            predicates.add(builder.equal(root.get("organizationId"), organizationId));
             if (status != null) {
                 predicates.add(builder.equal(root.get("status"), status));
             }
@@ -193,16 +198,18 @@ class DashboardController {
     }
 
     private List<DeviceView> deviceViews() {
-        return devices.list().stream()
+        return devices.list(organization.currentOrganizationId()).stream()
                 .map(device -> new DeviceView(device, sessions.isOnline(device.getId())))
                 .toList();
     }
 
     private Map<UUID, String> apiKeyNames() {
-        return apiKeys.list().stream().collect(Collectors.toMap(ApiKey::getId, ApiKey::getName));
+        return apiKeys.list(organization.currentOrganizationId()).stream()
+                .collect(Collectors.toMap(ApiKey::getId, ApiKey::getName));
     }
 
     private Map<UUID, String> deviceNames() {
-        return devices.list().stream().collect(Collectors.toMap(Device::getId, Device::getName, (a, b) -> a));
+        return devices.list(organization.currentOrganizationId()).stream()
+                .collect(Collectors.toMap(Device::getId, Device::getName, (a, b) -> a));
     }
 }

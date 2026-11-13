@@ -10,7 +10,10 @@ import static com.ultracoresoft.ultrasmsgateway.message.MessageStatus.SENT;
 
 import com.ultracoresoft.ultrasmsgateway.common.InvalidRequestException;
 import com.ultracoresoft.ultrasmsgateway.common.NotFoundException;
+import com.ultracoresoft.ultrasmsgateway.apikey.ApiKeyPrincipal;
 import com.ultracoresoft.ultrasmsgateway.config.GatewayProperties;
+import com.ultracoresoft.ultrasmsgateway.device.Device;
+import com.ultracoresoft.ultrasmsgateway.device.DeviceRepository;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -41,14 +44,16 @@ public class MessageService {
 
     private final SmsMessageRepository messages;
     private final MessageEventRepository events;
+    private final DeviceRepository devices;
     private final GatewayProperties properties;
     private final Clock clock;
     private final TransactionTemplate transaction;
 
-    public MessageService(SmsMessageRepository messages, MessageEventRepository events, GatewayProperties properties,
-                          Clock clock, TransactionTemplate transaction) {
+    public MessageService(SmsMessageRepository messages, MessageEventRepository events, DeviceRepository devices,
+                          GatewayProperties properties, Clock clock, TransactionTemplate transaction) {
         this.messages = messages;
         this.events = events;
+        this.devices = devices;
         this.properties = properties;
         this.clock = clock;
         this.transaction = transaction;
@@ -60,7 +65,8 @@ public class MessageService {
      * Queues a message. With a client reference already used by this API key, returns the earlier message
      * instead of queuing a second one, so that a client can safely retry after a timeout.
      */
-    public SubmitResult submit(UUID apiKeyId, NewMessage request) {
+    public SubmitResult submit(ApiKeyPrincipal client, NewMessage request) {
+        UUID apiKeyId = client.id();
         Duration ttl = resolveTtl(request.ttlSeconds());
         String reference = blankToNull(request.clientReference());
         if (reference != null) {
@@ -70,7 +76,7 @@ public class MessageService {
             }
         }
         try {
-            return transaction.execute(status -> new SubmitResult(create(apiKeyId, reference, request, ttl), true));
+            return transaction.execute(status -> new SubmitResult(create(client, reference, request, ttl), true));
         } catch (DataIntegrityViolationException e) {
             // Two concurrent submissions with the same reference: the other one won.
             if (reference == null) {
@@ -88,10 +94,11 @@ public class MessageService {
                 .orElseThrow(() -> new NotFoundException("No message " + id + " for this API key."));
     }
 
-    private SmsMessage create(UUID apiKeyId, String reference, NewMessage request, Duration ttl) {
+    private SmsMessage create(ApiKeyPrincipal client, String reference, NewMessage request, Duration ttl) {
         Instant now = clock.instant();
         SmsMessage message = new SmsMessage();
-        message.setApiKeyId(apiKeyId);
+        message.setOrganizationId(client.organizationId());
+        message.setApiKeyId(client.id());
         message.setClientReference(reference);
         message.setRecipient(request.to());
         message.setBody(request.body());
@@ -119,11 +126,20 @@ public class MessageService {
 
     // ---------------------------------------------------------------- dispatch
 
-    /** Takes up to {@code max} queued messages, oldest first, and assigns them to the device. */
+    /**
+     * Takes up to {@code max} queued messages of the device's own organization, oldest first, and assigns
+     * them to the device. The organization is read from the device here, not passed by the caller, so that
+     * a message can never be given to another organization's phone. A revoked device gets nothing.
+     */
     @Transactional
     public List<SmsMessage> claim(UUID deviceId, int max) {
+        Optional<Device> device = devices.findById(deviceId).filter(Device::isActive);
+        if (device.isEmpty()) {
+            return List.of();
+        }
         Instant now = clock.instant();
-        List<SmsMessage> batch = messages.findByStatusAndExpiresAtAfterOrderByCreatedAtAsc(QUEUED, now, Limit.of(max));
+        List<SmsMessage> batch = messages.findByOrganizationIdAndStatusAndExpiresAtAfterOrderByCreatedAtAsc(
+                device.get().getOrganizationId(), QUEUED, now, Limit.of(max));
         for (SmsMessage message : batch) {
             message.setDeviceId(deviceId);
             message.setDispatchedAt(now);

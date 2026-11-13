@@ -10,6 +10,7 @@ import com.ultracoresoft.ultrasmsgateway.message.MessageEventRepository;
 import com.ultracoresoft.ultrasmsgateway.message.MessageStatus;
 import com.ultracoresoft.ultrasmsgateway.message.SmsMessage;
 import com.ultracoresoft.ultrasmsgateway.message.SmsMessageRepository;
+import com.ultracoresoft.ultrasmsgateway.organization.Organization;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -162,6 +163,7 @@ class DemoDataLoader implements ApplicationRunner {
 
     private SmsMessage base(ApiKey key, String recipient, Instant createdAt, MessageStatus status) {
         SmsMessage message = new SmsMessage();
+        message.setOrganizationId(key.getOrganizationId());
         message.setApiKeyId(key.getId());
         message.setRecipient(recipient);
         message.setBodyLength(28 + recipient.hashCode() % 40 + 40);
@@ -214,6 +216,7 @@ class DemoDataLoader implements ApplicationRunner {
 
     private ApiKey apiKey(String name, String secret, Instant createdAt, Instant lastUsedAt) {
         ApiKey key = new ApiKey();
+        key.setOrganizationId(Organization.DEFAULT_ID);
         key.setName(name);
         key.setKeyPrefix(Secrets.displayPrefix(secret));
         key.setKeyHash(Secrets.hash(secret));
@@ -225,6 +228,7 @@ class DemoDataLoader implements ApplicationRunner {
     private Device device(String name, String token, String operator, String network, int battery, boolean charging,
                           int signal, Instant lastSeen, Instant revokedAt) {
         Device device = new Device();
+        device.setOrganizationId(Organization.DEFAULT_ID);
         device.setName(name);
         device.setTokenPrefix(Secrets.displayPrefix(token));
         device.setTokenHash(Secrets.hash(token));

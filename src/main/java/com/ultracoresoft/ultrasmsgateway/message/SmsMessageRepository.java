@@ -17,14 +17,17 @@ public interface SmsMessageRepository extends JpaRepository<SmsMessage, UUID>, J
 
     Optional<SmsMessage> findByApiKeyIdAndClientReference(UUID apiKeyId, String clientReference);
 
-    /** Oldest messages first: the queue is first in, first out. */
-    List<SmsMessage> findByStatusAndExpiresAtAfterOrderByCreatedAtAsc(MessageStatus status, Instant now, Limit limit);
+    Optional<SmsMessage> findByIdAndOrganizationId(UUID id, UUID organizationId);
+
+    /** Oldest messages of the organization first: the queue is first in, first out. */
+    List<SmsMessage> findByOrganizationIdAndStatusAndExpiresAtAfterOrderByCreatedAtAsc(
+            UUID organizationId, MessageStatus status, Instant now, Limit limit);
 
     List<SmsMessage> findByDeviceIdAndStatusAndExpiresAtAfter(UUID deviceId, MessageStatus status, Instant now);
 
     long countByDeviceIdAndStatusIn(UUID deviceId, Collection<MessageStatus> statuses);
 
-    long countByStatus(MessageStatus status);
+    long countByOrganizationIdAndStatus(UUID organizationId, MessageStatus status);
 
     List<SmsMessage> findByStatusInAndExpiresAtBefore(Collection<MessageStatus> statuses, Instant now);
 
@@ -32,8 +35,9 @@ public interface SmsMessageRepository extends JpaRepository<SmsMessage, UUID>, J
 
     List<SmsMessage> findByStatusAndAcceptedAtBefore(MessageStatus status, Instant before);
 
-    @Query("select m.status as status, count(m) as total from SmsMessage m where m.createdAt >= :since group by m.status")
-    List<StatusCount> countByStatusSince(@Param("since") Instant since);
+    @Query("select m.status as status, count(m) as total from SmsMessage m "
+            + "where m.organizationId = :organizationId and m.createdAt >= :since group by m.status")
+    List<StatusCount> countByStatusSince(@Param("organizationId") UUID organizationId, @Param("since") Instant since);
 
     interface StatusCount {
         MessageStatus getStatus();
@@ -42,8 +46,9 @@ public interface SmsMessageRepository extends JpaRepository<SmsMessage, UUID>, J
     }
 
     /** Creation time and status of recent messages, for the overview chart. */
-    @Query("select m.createdAt as createdAt, m.status as status from SmsMessage m where m.createdAt >= :since")
-    List<CreatedStatus> findCreatedStatusSince(@Param("since") Instant since);
+    @Query("select m.createdAt as createdAt, m.status as status from SmsMessage m "
+            + "where m.organizationId = :organizationId and m.createdAt >= :since")
+    List<CreatedStatus> findCreatedStatusSince(@Param("organizationId") UUID organizationId, @Param("since") Instant since);
 
     interface CreatedStatus {
         Instant getCreatedAt();

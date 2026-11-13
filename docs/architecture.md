@@ -8,11 +8,27 @@
 | `apikey` | API keys of client applications and their authentication filter. |
 | `message` | The queue: `SmsMessage` entity, state machine (`MessageService`), dispatch loop (`MessageDispatcher`). |
 | `device` | Phones: tokens, WebSocket handler, live session registry, frames. |
+| `organization` | Owner of keys, devices and messages; `OrganizationContext` tells the dashboard which one is current. |
 | `dashboard` | Server-rendered administration pages (Thymeleaf). |
 | `config` | Settings (`GatewayProperties`), security zones, WebSocket and OpenAPI setup. |
 
-Database schema: [`V1__init.sql`](../src/main/resources/db/migration/V1__init.sql), managed by Flyway.
+Database schema: the migrations in [`db/migration`](../src/main/resources/db/migration), managed by Flyway.
 Hibernate only validates the schema; every change goes through a new migration.
+
+## Organizations
+
+Every API key, device and message belongs to an organization, and nothing crosses from one to another:
+
+- a message takes the organization of the API key that queued it;
+- a phone only receives messages of its own organization: `MessageService.claim` reads the organization
+  from the device itself, so a caller cannot ask for another organization's queue;
+- reports are only accepted from the device the message was given to;
+- the dashboard only lists and changes what belongs to the current organization.
+
+A self-hosted gateway has a single organization, created by the database migration
+(`Organization.DEFAULT_ID`), and `DefaultOrganizationContext` always answers it: nothing to configure.
+`OrganizationContext` is the extension point for an edition with several organizations, which provides its
+own `@Primary` bean resolving the organization of the signed-in user.
 
 ## The queue is a table
 
@@ -67,5 +83,7 @@ When a device reconnects, the messages it had not acknowledged are pushed to it 
 
 - **Single instance.** Device sessions live in memory (`DeviceSessionRegistry`), so run one gateway instance.
   Several instances need a shared registry or sticky routing of devices; this is on the roadmap.
-- **No routing yet.** Any connected device may send any message. Routing by operator prefix comes next.
-- **One administrator.** No user management in the dashboard.
+- **No routing yet.** Any connected device of an organization may send any of its messages. Routing by
+  operator prefix comes next.
+- **One administrator, one organization.** The data model supports several organizations, but this edition
+  has no user management: the single administrator works in the default organization.

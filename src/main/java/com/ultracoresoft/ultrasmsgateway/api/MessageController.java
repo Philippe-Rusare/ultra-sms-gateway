@@ -41,7 +41,7 @@ public class MessageController {
     @PostMapping
     public ResponseEntity<MessageResponse> submit(@AuthenticationPrincipal ApiKeyPrincipal client,
                                                   @Valid @RequestBody SubmitMessageRequest request) {
-        SubmitResult result = messages.submit(client.id(), request.toNewMessage());
+        SubmitResult result = messages.submit(client, request.toNewMessage());
         if (result.created()) {
             dispatcher.dispatchSoon();
         }

@@ -9,5 +9,7 @@ public interface DeviceRepository extends JpaRepository<Device, UUID> {
 
     Optional<Device> findByTokenHash(String tokenHash);
 
-    List<Device> findAllByOrderByCreatedAtDesc();
+    Optional<Device> findByIdAndOrganizationId(UUID id, UUID organizationId);
+
+    List<Device> findAllByOrganizationIdOrderByCreatedAtDesc(UUID organizationId);
 }

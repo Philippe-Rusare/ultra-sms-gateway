@@ -23,9 +23,10 @@ public class ApiKeyService {
     private final Clock clock;
 
     @Transactional
-    public Issued<ApiKey> create(String name) {
+    public Issued<ApiKey> create(UUID organizationId, String name) {
         String secret = Secrets.generate(KEY_PREFIX);
         ApiKey key = new ApiKey();
+        key.setOrganizationId(organizationId);
         key.setName(name.trim());
         key.setKeyPrefix(Secrets.displayPrefix(secret));
         key.setKeyHash(Secrets.hash(secret));
@@ -34,8 +35,8 @@ public class ApiKeyService {
     }
 
     @Transactional
-    public void revoke(UUID id) {
-        repository.findById(id)
+    public void revoke(UUID organizationId, UUID id) {
+        repository.findByIdAndOrganizationId(id, organizationId)
                 .filter(ApiKey::isActive)
                 .ifPresent(key -> key.setRevokedAt(clock.instant()));
     }
@@ -53,12 +54,12 @@ public class ApiKeyService {
                     if (key.getLastUsedAt() == null || key.getLastUsedAt().isBefore(now.minus(LAST_USED_RESOLUTION))) {
                         key.setLastUsedAt(now);
                     }
-                    return new ApiKeyPrincipal(key.getId(), key.getName());
+                    return new ApiKeyPrincipal(key.getId(), key.getOrganizationId(), key.getName());
                 });
     }
 
     @Transactional(readOnly = true)
-    public List<ApiKey> list() {
-        return repository.findAllByOrderByCreatedAtDesc();
+    public List<ApiKey> list(UUID organizationId) {
+        return repository.findAllByOrganizationIdOrderByCreatedAtDesc(organizationId);
     }
 }

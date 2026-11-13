@@ -3,9 +3,12 @@ package com.ultracoresoft.ultrasmsgateway.dashboard;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.ultracoresoft.ultrasmsgateway.IntegrationTest;
+import com.ultracoresoft.ultrasmsgateway.apikey.ApiKeyPrincipal;
 import com.ultracoresoft.ultrasmsgateway.device.DeviceService;
 import com.ultracoresoft.ultrasmsgateway.message.MessageService;
 import com.ultracoresoft.ultrasmsgateway.message.NewMessage;
+import com.ultracoresoft.ultrasmsgateway.organization.Organization;
+import com.ultracoresoft.ultrasmsgateway.organization.OrganizationRepository;
 import java.net.CookieManager;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -31,14 +34,17 @@ class DashboardTest extends IntegrationTest {
     @Autowired
     DeviceService devices;
 
+    @Autowired
+    OrganizationRepository organizations;
+
     HttpClient browser;
     UUID messageId;
 
     @BeforeEach
     void signIn() throws Exception {
-        UUID apiKeyId = apiKeys.create("dashboard-client").value().getId();
-        UUID deviceId = devices.create("dashboard-phone").value().getId();
-        messageId = messages.submit(apiKeyId, new NewMessage("+243812345678", "Your code is 111111", null, "ref-1"))
+        UUID apiKeyId = apiKeys.create(Organization.DEFAULT_ID, "dashboard-client").value().getId();
+        UUID deviceId = devices.create(Organization.DEFAULT_ID, "dashboard-phone").value().getId();
+        messageId = messages.submit(new ApiKeyPrincipal(apiKeyId, Organization.DEFAULT_ID, "dashboard-client"), new NewMessage("+243812345678", "Your code is 111111", null, "ref-1"))
                 .message().getId();
         messages.claim(deviceId, 1);
         messages.onSent(deviceId, messageId);
@@ -61,6 +67,23 @@ class DashboardTest extends IntegrationTest {
         assertThat(page("/messages/" + messageId)).contains("History", "erased after sending", "DISPATCHED");
         assertThat(page("/devices")).contains("/v1/device/ws", "dashboard-phone");
         assertThat(page("/api-keys")).contains("dashboard-client");
+    }
+
+    @Test
+    void anotherOrganizationsDataIsNotShown() throws Exception {
+        UUID other = organizations.save(new Organization(UUID.randomUUID(), "Other", clock.instant())).getId();
+        UUID otherKey = apiKeys.create(other, "other-org-client").value().getId();
+        devices.create(other, "other-org-phone");
+        UUID otherMessage = messages.submit(new ApiKeyPrincipal(otherKey, other, "other-org-client"),
+                new NewMessage("+243999000111", "Hidden", null, null)).message().getId();
+
+        assertThat(page("/messages")).doesNotContain("+243999000111");
+        assertThat(page("/devices")).doesNotContain("other-org-phone");
+        assertThat(page("/api-keys")).doesNotContain("other-org-client");
+        assertThat(page("/")).doesNotContain("other-org-phone");
+        HttpResponse<String> detail = browser.send(HttpRequest.newBuilder(url("/messages/" + otherMessage)).GET().build(),
+                HttpResponse.BodyHandlers.ofString());
+        assertThat(detail.statusCode()).isEqualTo(404);
     }
 
     @Test

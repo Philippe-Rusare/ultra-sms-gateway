@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.ultracoresoft.ultrasmsgateway.IntegrationTest;
 import com.ultracoresoft.ultrasmsgateway.message.MessageStatus;
+import com.ultracoresoft.ultrasmsgateway.organization.Organization;
 import java.net.URI;
 import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
@@ -37,8 +38,8 @@ class DeviceWebSocketTest extends IntegrationTest {
 
     @BeforeEach
     void setUp() {
-        apiKey = apiKeys.create("ws-client").secret();
-        var issued = devices.create("ws-phone");
+        apiKey = apiKeys.create(Organization.DEFAULT_ID, "ws-client").secret();
+        var issued = devices.create(Organization.DEFAULT_ID, "ws-phone");
         deviceToken = issued.secret();
         deviceId = issued.value().getId();
     }
