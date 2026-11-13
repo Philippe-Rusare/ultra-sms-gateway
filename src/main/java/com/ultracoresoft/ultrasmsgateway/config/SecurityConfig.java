@@ -10,11 +10,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -23,7 +20,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * <ol>
  *   <li>{@code /v1/messages/**}: client applications, stateless, authenticated by API key.</li>
  *   <li>{@code /v1/device/**}: Android devices; the WebSocket handshake checks the device token itself.</li>
- *   <li>Everything else: the dashboard, behind a form login for the administrator.</li>
+ *   <li>Everything else: the dashboard. Its login is in {@link BuiltinDashboardSecurity}, which an embedding
+ *       application can switch off to provide its own.</li>
  * </ol>
  */
 @Configuration(proxyBeanMethods = false)
@@ -56,34 +54,7 @@ class SecurityConfig {
     }
 
     @Bean
-    @Order(3)
-    SecurityFilterChain dashboardChain(HttpSecurity http) throws Exception {
-        return http
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/login", "/css/**", "/img/**", "/error").permitAll()
-                        .anyRequest().hasRole("ADMIN"))
-                .formLogin(form -> form.loginPage("/login").defaultSuccessUrl("/", true))
-                .logout(logout -> logout.logoutSuccessUrl("/login?logout"))
-                .build();
-    }
-
-    @Bean
     PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
-    }
-
-    @Bean
-    UserDetailsService adminUser(GatewayProperties properties, PasswordEncoder encoder) {
-        GatewayProperties.Admin admin = properties.admin();
-        if (admin.password() == null || admin.password().isBlank()) {
-            throw new IllegalStateException(
-                    "No dashboard password configured: set the GATEWAY_ADMIN_PASSWORD environment variable.");
-        }
-        return new InMemoryUserDetailsManager(User.withUsername(admin.username())
-                .password(encoder.encode(admin.password()))
-                .roles("ADMIN")
-                .build());
     }
 }

@@ -55,7 +55,18 @@ public class MyApplication { ... }
   embedding application replaces the gateway's.
 
 Code added by the embedding application under the package `com.ultracoresoft.ultrasmsgateway` is covered by
-the gateway's entity and repository scanning. Extension points so far: `OrganizationContext`.
+the gateway's entity and repository scanning. In that case the application also declares
+`@AutoConfigurationPackage(basePackageClasses = GatewayCore.class)`, so that its own package is not scanned
+a second time and its repositories registered twice.
+
+Extension points:
+
+| Extension point | What the embedding application does |
+|---|---|
+| `OrganizationContext` | Provides a `@Primary` bean that returns the organization of the signed-in user. |
+| `gateway.dashboard.login=external` | Switches off the built-in administrator (`BuiltinDashboardSecurity`) and declares its own `SecurityFilterChain` for the dashboard, ordered after the API and device chains, with its own users. Without that chain the dashboard would be unprotected. |
+| `templates/extensions.html` | Provides its own file with the fragments `nav-links(active)` and `nav-account`, to add pages to the menu and show the signed-in account. |
+| `templates/login.html` | Provides its own sign-in page, posting `username` and `password` to `/login`. |
 
 ## The queue is a table
 

@@ -27,6 +27,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * {@code gateway.*} settings ({@code ultra-sms-gateway-defaults.properties}), which the embedding
  * application overrides in its own configuration. Database migrations ({@code db/migration}), templates
  * and static files come with the jar. See docs/architecture.md, "Embedding the gateway".
+ *
+ * <p>An application whose own package is inside this one must also declare
+ * {@code @AutoConfigurationPackage(basePackageClasses = GatewayCore.class)}: otherwise its package is
+ * scanned twice and its repositories are registered twice.
  */
 @Configuration(proxyBeanMethods = false)
 @ComponentScan(

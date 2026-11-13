@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<!--
+    Extension points of the dashboard layout. Both fragments are empty here. An application embedding the
+    gateway provides its own templates/extensions.html, with the same fragment names, to add its pages to
+    the menu and to show the signed-in account, without copying fragments.html.
+-->
+<body>
+<!-- Extra links at the end of the menu. `active` is the key of the current page. -->
+<th:block th:fragment="nav-links(active)"></th:block>
+
+<!-- Shown at the right of the top bar, before "Sign out". -->
+<th:block th:fragment="nav-account"></th:block>
+</body>
+</html>

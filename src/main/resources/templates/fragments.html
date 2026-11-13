@@ -16,7 +16,9 @@
         <a th:href="@{/devices}" th:classappend="${active == 'devices'} ? 'active'">Devices</a>
         <a th:href="@{/api-keys}" th:classappend="${active == 'api-keys'} ? 'active'">API keys</a>
         <a th:href="@{/swagger-ui.html}">API docs</a>
+        <th:block th:replace="~{extensions :: nav-links(${active})}"></th:block>
     </nav>
+    <th:block th:replace="~{extensions :: nav-account}"></th:block>
     <form th:action="@{/logout}" method="post">
         <button type="submit" class="link">Sign out</button>
     </form>
