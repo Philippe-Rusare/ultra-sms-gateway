@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.ultracoresoft</groupId>
     <artifactId>ultra-sms-gateway</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.2.0-SNAPSHOT</version>
     <name>ultra-sms-gateway</name>
     <description>Self-hosted SMS gateway: an HTTP API and dashboard that send SMS through Android phones and their SIM cards.</description>
     <url>https://github.com/Philippe-Rusare/ultra-sms-gateway</url>
@@ -126,6 +126,14 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <!--
+                        Two jars: ultra-sms-gateway-<version>.jar is a plain library that another application
+                        can depend on (see GatewayCore); ultra-sms-gateway-<version>-exec.jar is the
+                        executable application that the Docker image runs.
+                    -->
+                    <classifier>exec</classifier>
+                </configuration>
             </plugin>
             <plugin>
                 <!-- Test coverage report (target/site/jacoco/jacoco.xml), read by SonarQube in the Jenkins pipeline. -->

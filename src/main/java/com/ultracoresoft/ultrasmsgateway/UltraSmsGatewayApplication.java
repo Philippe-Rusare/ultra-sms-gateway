@@ -2,12 +2,9 @@ package com.ultracoresoft.ultrasmsgateway;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
-import org.springframework.scheduling.annotation.EnableScheduling;
 
+/** Standalone, self-hosted gateway. Everything it runs is declared by {@link GatewayCore}. */
 @SpringBootApplication
-@ConfigurationPropertiesScan
-@EnableScheduling
 public class UltraSmsGatewayApplication {
 
     public static void main(String[] args) {

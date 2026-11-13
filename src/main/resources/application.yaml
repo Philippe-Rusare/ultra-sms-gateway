@@ -28,19 +28,5 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
-gateway:
-  admin:
-    username: ${GATEWAY_ADMIN_USERNAME:admin}
-    # No default on purpose: the application refuses to start without it.
-    password: ${GATEWAY_ADMIN_PASSWORD:}
-  messages:
-    default-ttl: ${GATEWAY_DEFAULT_TTL:5m}
-    max-ttl: ${GATEWAY_MAX_TTL:24h}
-  dispatch:
-    interval: ${GATEWAY_DISPATCH_INTERVAL:2s}
-    ack-timeout: ${GATEWAY_ACK_TIMEOUT:60s}
-    report-timeout: ${GATEWAY_REPORT_TIMEOUT:10m}
-    max-in-flight-per-device: ${GATEWAY_MAX_IN_FLIGHT:3}
-    max-attempts: ${GATEWAY_MAX_ATTEMPTS:5}
-  dashboard:
-    time-zone: ${GATEWAY_TIME_ZONE:UTC}
+# The gateway.* settings (admin user, time to live, dispatch, dashboard time zone) have their defaults in
+# ultra-sms-gateway-defaults.properties; set the GATEWAY_* environment variables, or override them here.

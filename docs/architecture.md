@@ -30,6 +30,33 @@ A self-hosted gateway has a single organization, created by the database migrati
 `OrganizationContext` is the extension point for an edition with several organizations, which provides its
 own `@Primary` bean resolving the organization of the signed-in user.
 
+## Embedding the gateway
+
+The build produces two jars: `ultra-sms-gateway-<version>-exec.jar`, the executable application that the
+Docker image runs, and `ultra-sms-gateway-<version>.jar`, a plain library. Another Spring Boot application
+embeds the whole gateway by depending on the library and importing one class:
+
+```java
+@SpringBootApplication
+@Import(GatewayCore.class)
+public class MyApplication { ... }
+```
+
+`GatewayCore` registers the gateway's components, JPA entities and repositories. What comes with the jar:
+
+- **Settings.** The defaults of the `gateway.*` settings are in `ultra-sms-gateway-defaults.properties`,
+  loaded with the lowest precedence: the embedding application overrides them in its own configuration or
+  with the `GATEWAY_*` environment variables. Deployment settings (database, port, health endpoint) are
+  the embedding application's own.
+- **Database.** The migrations in `db/migration` are applied by Flyway as usual. An embedding application
+  keeps its own migrations apart (another location and history table), so that its version numbers never
+  collide with the gateway's.
+- **Pages.** Templates and static files are served from the jar; a template with the same name in the
+  embedding application replaces the gateway's.
+
+Code added by the embedding application under the package `com.ultracoresoft.ultrasmsgateway` is covered by
+the gateway's entity and repository scanning. Extension points so far: `OrganizationContext`.
+
 ## The queue is a table
 
 `sms_message` is the queue: no message broker is needed for the volumes a few phones can send (a phone

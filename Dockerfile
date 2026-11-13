@@ -16,7 +16,7 @@ RUN --mount=type=cache,target=/root/.m2 \
       -Daether.connector.connectTimeout=30000 \
       -Daether.connector.requestTimeout=180000 \
       package && \
-    cp target/ultra-sms-gateway-*.jar app.jar
+    cp target/ultra-sms-gateway-*-exec.jar app.jar
 
 # ---- Run ----
 FROM eclipse-temurin:21-jre

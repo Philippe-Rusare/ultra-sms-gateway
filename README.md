@@ -105,7 +105,8 @@ phones then connect to `wss://your-domain/v1/device/ws`.
 
 ## Configuration
 
-All settings are environment variables (see [`application.yaml`](src/main/resources/application.yaml)).
+All settings are environment variables (see [`application.yaml`](src/main/resources/application.yaml) and
+[`ultra-sms-gateway-defaults.properties`](src/main/resources/ultra-sms-gateway-defaults.properties)).
 
 | Variable | Default | Meaning |
 |---|---|---|
