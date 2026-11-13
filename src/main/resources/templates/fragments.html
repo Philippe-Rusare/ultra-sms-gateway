@@ -6,6 +6,7 @@
     <title th:text="${title} + ' · Ultra SMS Gateway'">Ultra SMS Gateway</title>
     <link rel="icon" type="image/svg+xml" th:href="@{/img/logo.svg}">
     <link rel="stylesheet" th:href="@{/css/app.css}">
+    <th:block th:replace="~{extensions :: head-extra}"></th:block>
 </head>
 <body>
 <header th:fragment="nav(active)" class="topbar">

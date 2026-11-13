@@ -65,7 +65,7 @@ Extension points:
 |---|---|
 | `OrganizationContext` | Provides a `@Primary` bean that returns the organization of the signed-in user. |
 | `gateway.dashboard.login=external` | Switches off the built-in administrator (`BuiltinDashboardSecurity`) and declares its own `SecurityFilterChain` for the dashboard, ordered after the API and device chains, with its own users. Without that chain the dashboard would be unprotected. |
-| `templates/extensions.html` | Provides its own file with the fragments `nav-links(active)` and `nav-account`, to add pages to the menu and show the signed-in account. |
+| `templates/extensions.html` | Provides its own file with the fragments `nav-links(active)`, `nav-account`, `head-extra` and `overview-top`, to add pages to the menu, show the signed-in account, load a stylesheet and add content at the top of the Overview page. All four fragments must be present. |
 | `templates/login.html` | Provides its own sign-in page, posting `username` and `password` to `/login`. |
 
 ## The queue is a table
