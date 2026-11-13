@@ -80,8 +80,9 @@ docker compose up -d
 Open <http://localhost:8080> and sign in with `GATEWAY_ADMIN_USERNAME` / `GATEWAY_ADMIN_PASSWORD`.
 
 1. **API keys → Create key.** Copy the key, it is shown only once.
-2. **Devices → Add device.** Install the [Android app](https://github.com/Philippe-Rusare/ultra-sms-gateway-android/releases) on a phone with a SIM card, then
-   copy the server URL and the device token into it.
+2. **Devices → Add device with a QR code.** Install the
+   [Android app](https://github.com/Philippe-Rusare/ultra-sms-gateway-android/releases) on a phone with a SIM
+   card, tap **Scan the QR code** in the app, then **Start the gateway**.
 3. Queue a message:
 
 ```bash

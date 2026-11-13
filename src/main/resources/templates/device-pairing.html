@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments :: head('Add a device')}"></head>
+<body>
+<header th:replace="~{fragments :: nav('devices')}"></header>
+<main>
+    <p><a th:href="@{/devices}">← Devices</a></p>
+    <h1>Add <span th:text="${pairing.deviceName}">phone</span></h1>
+
+    <div th:if="${status.name() == 'PAIRED'}" class="notice" role="status">
+        <strong>The phone is paired.</strong> It appears in <a th:href="@{/devices}">Devices</a>.
+    </div>
+    <div th:if="${status.name() == 'EXPIRED'}" class="notice notice-error" role="alert">
+        This QR code has expired. <a th:href="@{/devices}">Add the device again</a> to get a new one.
+    </div>
+    <div th:if="${status.name() == 'PENDING' and qr == null}" class="notice notice-error" role="alert">
+        The QR code is only shown once. <a th:href="@{/devices}">Add the device again</a> to get a new one.
+    </div>
+
+    <section th:if="${status.name() == 'PENDING' and qr != null}" class="pairing" id="pairing"
+             th:attr="data-status-url=@{/devices/pair/{id}/status(id=${pairing.id})},data-devices-url=@{/devices}">
+        <div class="pairing-qr">
+            <svg th:attr="viewBox='0 0 ' + ${qr.size} + ' ' + ${qr.size}" role="img" aria-label="Pairing QR code"
+                 shape-rendering="crispEdges">
+                <path th:attr="d=${qr.path}" fill="#000"/>
+            </svg>
+        </div>
+        <div>
+            <ol>
+                <li>Install and open the <strong>Ultra SMS Gateway</strong> app on the phone.</li>
+                <li>Tap <strong>Scan the QR code</strong> and point the camera at this code.</li>
+                <li>Allow sending SMS, then tap <strong>Start the gateway</strong>.</li>
+            </ol>
+            <p class="muted">The code works once and expires at
+                <span th:text="${@fmt.dateTime(pairing.expiresAt)}">—</span>. This page updates when the phone is paired.</p>
+            <p id="pairing-state" class="muted" role="status">Waiting for the phone…</p>
+            <details>
+                <summary>The phone cannot scan?</summary>
+                <p class="muted small">Copy this link and open it on the phone, or go back and create a token to type in the app.</p>
+                <code class="pairing-link" th:text="${pairingLink}">ultrasms://pair?…</code>
+            </details>
+        </div>
+    </section>
+</main>
+
+<script th:inline="none">
+    (function () {
+        var box = document.getElementById('pairing');
+        if (!box) return;
+        var state = document.getElementById('pairing-state');
+        var timer = setInterval(function () {
+            fetch(box.dataset.statusUrl, {headers: {'Accept': 'application/json'}})
+                .then(function (response) { return response.ok ? response.json() : null; })
+                .then(function (body) {
+                    if (!body || body.status === 'PENDING') return;
+                    clearInterval(timer);
+                    if (body.status === 'PAIRED') {
+                        state.textContent = 'The phone is paired.';
+                        window.location = box.dataset.devicesUrl;
+                    } else {
+                        state.textContent = 'This QR code has expired. Add the device again.';
+                    }
+                })
+                .catch(function () { /* The next attempt will retry. */ });
+        }, 2000);
+    })();
+</script>
+</body>
+</html>

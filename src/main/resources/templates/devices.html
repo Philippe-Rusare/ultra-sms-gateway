@@ -5,7 +5,7 @@
 <header th:replace="~{fragments :: nav('devices')}"></header>
 <main>
     <h1>Devices</h1>
-    <p class="muted">Each Android phone connects with its own token. Enter the server URL and the token in the app.</p>
+    <p class="muted">Each Android phone connects with its own token. Add a device, then scan its QR code with the app.</p>
 
     <div th:replace="~{fragments :: error}"></div>
     <div th:replace="~{fragments :: issued('Device token')}"></div>
@@ -14,9 +14,11 @@
         <dt>Server URL</dt><dd><code th:text="${serverUrl}">ws://localhost:8080/v1/device/ws</code></dd>
     </dl>
 
-    <form th:action="@{/devices}" method="post" class="inline-form">
+    <form th:action="@{/devices/pair}" method="post" class="inline-form">
         <input type="text" name="name" maxlength="100" placeholder="e.g. Vodacom phone 1" required>
-        <button type="submit">Add device</button>
+        <button type="submit">Add device with a QR code</button>
+        <button type="submit" class="secondary" th:formaction="@{/devices}"
+                title="Shows a token to type in the app, for a phone that cannot scan">Create a token instead</button>
     </form>
 
     <p th:if="${#lists.isEmpty(devices)}" class="muted">No device yet.</p>

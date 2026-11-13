@@ -87,6 +87,32 @@ class DashboardTest extends IntegrationTest {
     }
 
     @Test
+    void addingADeviceShowsAQrCodeAndFollowsThePairing() throws Exception {
+        String form = "name=qr-phone&_csrf=" + csrf("/devices");
+        HttpResponse<String> started = browser.send(HttpRequest.newBuilder(url("/devices/pair"))
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .POST(HttpRequest.BodyPublishers.ofString(form)).build(), HttpResponse.BodyHandlers.ofString());
+        assertThat(started.statusCode()).isEqualTo(302);
+        String pairingPath = URI.create(started.headers().firstValue("Location").orElseThrow()).getPath();
+
+        String page = page(pairingPath);
+        assertThat(page).contains("Add <span>qr-phone</span>", "<svg", "Scan the QR code", "Waiting for the phone");
+        Matcher link = Pattern.compile("ultrasms://pair\\?server=([^&]+)&amp;code=(usgp_[A-Za-z0-9_-]+)").matcher(page);
+        assertThat(link.find()).as("pairing link on the page").isTrue();
+        assertThat(java.net.URLDecoder.decode(link.group(1), StandardCharsets.UTF_8)).isEqualTo("http://localhost:" + port);
+        assertThat(page(pairingPath + "/status")).contains("PENDING");
+
+        // The QR code is shown once: reopening the page does not show it again.
+        assertThat(page(pairingPath)).contains("only shown once").doesNotContain("<svg");
+
+        HttpResponse<String> paired = post("/v1/device/pair", null, "{\"code\":\"" + link.group(2) + "\"}");
+        assertThat(paired.statusCode()).isEqualTo(200);
+        assertThat(page(pairingPath + "/status")).contains("PAIRED");
+        assertThat(page(pairingPath)).contains("The phone is paired");
+        assertThat(page("/devices")).contains("qr-phone");
+    }
+
+    @Test
     void messageTextIsNeverShown() throws Exception {
         assertThat(page("/messages")).doesNotContain("111111");
         assertThat(page("/messages/" + messageId)).doesNotContain("111111");

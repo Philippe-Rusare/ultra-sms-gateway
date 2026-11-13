@@ -3,6 +3,40 @@
 How an Android phone talks to the gateway. The Android app implements this; anything else that speaks it
 (a test script, another platform) can act as a device.
 
+## Pairing
+
+A phone gets its server address and its device token by scanning a QR code, instead of typing them.
+
+1. In the dashboard, **Devices → Add device with a QR code** creates a one-time code, valid 10 minutes, and
+   shows it as a QR code. The QR code is shown once; only the hash of the code is stored.
+2. The QR code holds a link: `ultrasms://pair?server=<dashboard address, URL-encoded>&code=usgp_...`.
+   The app also opens this link directly, for a phone that cannot scan.
+3. The app exchanges the code, without authentication (the code is the credential):
+
+```
+POST <server>/v1/device/pair
+Content-Type: application/json
+
+{ "code": "usgp_..." }
+```
+
+```json
+{
+  "deviceId": "8b1e…",
+  "name": "Vodacom phone 1",
+  "token": "usgd_...",
+  "deviceUrl": "wss://<gateway>/v1/device/ws"
+}
+```
+
+4. The app stores `deviceUrl` and `token`, then connects as described below. The token is returned only by
+   this call.
+
+A code that is unknown, expired or already used gets `404` with a problem document. The device is created
+in the organization of the person who started the pairing.
+
+Typing the server URL and a token by hand still works (**Create a token instead**).
+
 ## Connection
 
 ```
@@ -10,7 +44,7 @@ GET wss://<gateway>/v1/device/ws
 Authorization: Bearer usgd_...
 ```
 
-- The token is created in the dashboard (**Devices → Add device**) and shown once.
+- The token comes from the pairing above, or is created by hand in the dashboard and shown once.
 - A missing, unknown or revoked token is refused with `401` during the handshake.
 - The token is only accepted in the header, never in the URL, where proxies would log it.
 - One connection per device: a new connection closes the previous one (close code `4000`).

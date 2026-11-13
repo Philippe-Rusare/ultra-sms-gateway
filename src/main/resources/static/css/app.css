@@ -181,3 +181,14 @@ body.auth { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     body.auth { grid-template-columns: 1fr; }
     .auth-hero { display: none; }
 }
+
+/* ---- Device pairing ---- */
+button.secondary { background: none; color: var(--accent); border: 1px solid var(--border); }
+.pairing { display: grid; grid-template-columns: minmax(220px, 320px) 1fr; gap: 32px; align-items: start;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 24px; }
+/* A QR code must stay dark on light to be readable, in dark mode too. */
+.pairing-qr { background: #fff; border-radius: 8px; padding: 12px; }
+.pairing-qr svg { display: block; width: 100%; height: auto; }
+.pairing ol { margin: 0 0 16px; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; line-height: 1.5; }
+.pairing-link { word-break: break-all; user-select: all; font-size: 0.8rem; }
+@media (max-width: 760px) { .pairing { grid-template-columns: 1fr; } }

@@ -4,6 +4,8 @@ import com.ultracoresoft.ultrasmsgateway.apikey.ApiKey;
 import com.ultracoresoft.ultrasmsgateway.apikey.ApiKeyService;
 import com.ultracoresoft.ultrasmsgateway.common.Issued;
 import com.ultracoresoft.ultrasmsgateway.device.Device;
+import com.ultracoresoft.ultrasmsgateway.device.DevicePairing;
+import com.ultracoresoft.ultrasmsgateway.device.DevicePairingService;
 import com.ultracoresoft.ultrasmsgateway.device.DeviceService;
 import com.ultracoresoft.ultrasmsgateway.device.DeviceSessionRegistry;
 import com.ultracoresoft.ultrasmsgateway.message.MessageEventRepository;
@@ -12,6 +14,8 @@ import com.ultracoresoft.ultrasmsgateway.message.SmsMessage;
 import com.ultracoresoft.ultrasmsgateway.message.SmsMessageRepository;
 import com.ultracoresoft.ultrasmsgateway.organization.OrganizationContext;
 import jakarta.persistence.criteria.Predicate;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -34,6 +38,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -46,6 +51,8 @@ class DashboardController {
     private static final int PAGE_SIZE = 50;
     private static final int CHART_DAYS = 14;
     private static final int MAX_NAME_LENGTH = 100;
+    /** Link encoded in the QR code and understood by the Android app. See docs/device-protocol.md. */
+    static final String PAIRING_SCHEME = "ultrasms://pair";
 
     private final SmsMessageRepository messages;
     private final MessageEventRepository events;
@@ -55,6 +62,7 @@ class DashboardController {
     private final Clock clock;
     private final Formats formats;
     private final OrganizationContext organization;
+    private final DevicePairingService pairings;
 
     record DeviceView(Device device, boolean online) {
     }
@@ -144,6 +152,40 @@ class DashboardController {
         redirect.addFlashAttribute("issuedName", issued.value().getName());
         redirect.addFlashAttribute("issuedSecret", issued.secret());
         return "redirect:/devices";
+    }
+
+    /** Starts a pairing and shows its QR code once: the code is not stored, so the page cannot be reopened. */
+    @PostMapping("/devices/pair")
+    String startPairing(@RequestParam String name, RedirectAttributes redirect) {
+        if (!validName(name, redirect)) {
+            return "redirect:/devices";
+        }
+        Issued<DevicePairing> issued = pairings.start(organization.currentOrganizationId(), name);
+        String link = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
+        redirect.addFlashAttribute("pairingLink", PAIRING_SCHEME + "?server="
+                + URLEncoder.encode(link, StandardCharsets.UTF_8) + "&code=" + issued.secret());
+        return "redirect:/devices/pair/" + issued.value().getId();
+    }
+
+    @GetMapping("/devices/pair/{id}")
+    String pairingPage(@PathVariable UUID id, Model model) {
+        DevicePairing pairing = pairings.find(organization.currentOrganizationId(), id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        model.addAttribute("pairing", pairing);
+        model.addAttribute("status", pairing.statusAt(clock.instant()));
+        if (model.getAttribute("pairingLink") instanceof String link) {
+            model.addAttribute("qr", QrCode.of(link));
+        }
+        return "device-pairing";
+    }
+
+    /** Polled by the pairing page to know when the phone has scanned the code. */
+    @GetMapping("/devices/pair/{id}/status")
+    @ResponseBody
+    Map<String, String> pairingStatus(@PathVariable UUID id) {
+        DevicePairing pairing = pairings.find(organization.currentOrganizationId(), id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        return Map.of("status", pairing.statusAt(clock.instant()).name());
     }
 
     @PostMapping("/devices/{id}/revoke")
