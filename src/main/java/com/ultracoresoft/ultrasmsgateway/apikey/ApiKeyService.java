@@ -8,6 +8,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +34,17 @@ public class ApiKeyService {
         key.setKeyHash(Secrets.hash(secret));
         key.setCreatedAt(clock.instant());
         return new Issued<>(repository.save(key), secret);
+    }
+
+    /** Renames the key if it belongs to the organization. The name is trimmed by the caller's checks. */
+    @Transactional
+    public void rename(UUID organizationId, UUID id, String name) {
+        repository.findByIdAndOrganizationId(id, organizationId).ifPresent(item -> item.setName(name.trim()));
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ApiKey> page(UUID organizationId, Pageable pageable) {
+        return repository.findAllByOrganizationIdOrderByCreatedAtDesc(organizationId, pageable);
     }
 
     @Transactional

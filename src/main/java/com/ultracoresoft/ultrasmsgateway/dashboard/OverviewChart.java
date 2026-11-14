@@ -60,8 +60,6 @@ public record OverviewChart(int width, int height, long total, List<Tick> ticks,
     static final double GAP = 2;
     static final double MIN_SEGMENT = 1.5;
 
-    private static final DateTimeFormatter SHORT = DateTimeFormatter.ofPattern("d MMM", Locale.ENGLISH);
-    private static final DateTimeFormatter FULL = DateTimeFormatter.ofPattern("EEE d MMM yyyy", Locale.ENGLISH);
 
     public double baseline() {
         return HEIGHT - BOTTOM;
@@ -77,6 +75,13 @@ public record OverviewChart(int width, int height, long total, List<Tick> ticks,
 
     /** Builds the chart for the {@code days} days ending today, in the dashboard time zone. */
     public static OverviewChart build(List<CreatedStatus> rows, LocalDate today, ZoneId zone, int days) {
+        return build(rows, today, zone, days, Locale.ENGLISH);
+    }
+
+    /** Same, with the day labels in the language of {@code locale}. */
+    public static OverviewChart build(List<CreatedStatus> rows, LocalDate today, ZoneId zone, int days, Locale locale) {
+        DateTimeFormatter shortDay = DateTimeFormatter.ofPattern("d MMM", locale);
+        DateTimeFormatter fullDay = DateTimeFormatter.ofPattern("EEE d MMM yyyy", locale);
         LocalDate first = today.minusDays(days - 1L);
         long[][] counts = new long[days][Series.values().length];
         for (CreatedStatus row : rows) {
@@ -120,7 +125,7 @@ public record OverviewChart(int width, int height, long total, List<Tick> ticks,
             double center = LEFT + band * i + band / 2;
             double x = center - barWidth / 2;
             List<Segment> segments = segments(counts[i], x, barWidth, baseline, perUnit);
-            bars.add(new Bar(SHORT.format(day), FULL.format(day), (days - 1 - i) % 2 == 0, round(center),
+            bars.add(new Bar(shortDay.format(day), fullDay.format(day), (days - 1 - i) % 2 == 0, round(center),
                     round(LEFT + band * i), round(band),
                     counts[i][0], counts[i][1], counts[i][2], counts[i][3], segments));
         }

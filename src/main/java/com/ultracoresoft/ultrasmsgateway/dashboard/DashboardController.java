@@ -23,6 +23,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -49,6 +50,8 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 class DashboardController {
 
     private static final int PAGE_SIZE = 50;
+    /** Devices and API keys per page. */
+    static final int LIST_PAGE_SIZE = 20;
     private static final int CHART_DAYS = 14;
     private static final int MAX_NAME_LENGTH = 100;
     /** Link encoded in the QR code and understood by the Android app. See docs/device-protocol.md. */
@@ -73,7 +76,7 @@ class DashboardController {
     }
 
     @GetMapping("/")
-    String overview(Model model) {
+    String overview(Model model, Locale locale) {
         Map<MessageStatus, Long> counts = new EnumMap<>(MessageStatus.class);
         for (MessageStatus status : MessageStatus.values()) {
             counts.put(status, 0L);
@@ -89,7 +92,7 @@ class DashboardController {
         LocalDate today = LocalDate.now(clock.withZone(formats.zoneId()));
         Instant chartStart = today.minusDays(CHART_DAYS - 1L).atStartOfDay(formats.zoneId()).toInstant();
         OverviewChart chart = OverviewChart.build(
-                messages.findCreatedStatusSince(organizationId, chartStart), today, formats.zoneId(), CHART_DAYS);
+                messages.findCreatedStatusSince(organizationId, chartStart), today, formats.zoneId(), CHART_DAYS, locale);
         model.addAttribute("chart", chart);
         model.addAttribute("chartSeries", OverviewChart.Series.values());
         model.addAttribute("successRate", successRate(chart.bars().subList(CHART_DAYS - 7, CHART_DAYS)));
@@ -136,8 +139,10 @@ class DashboardController {
     }
 
     @GetMapping("/devices")
-    String deviceList(Model model) {
-        model.addAttribute("devices", deviceViews());
+    String deviceList(@RequestParam(defaultValue = "0") int page, Model model) {
+        Page<Device> result = devices.page(organization.currentOrganizationId(),
+                PageRequest.of(Math.max(page, 0), LIST_PAGE_SIZE));
+        model.addAttribute("page", result.map(device -> new DeviceView(device, sessions.isOnline(device.getId()))));
         model.addAttribute("serverUrl", ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path("/v1/device/ws").toUriString().replaceFirst("^http", "ws"));
         return "devices";
@@ -188,15 +193,26 @@ class DashboardController {
         return Map.of("status", pairing.statusAt(clock.instant()).name());
     }
 
+    @PostMapping("/devices/{id}/rename")
+    String renameDevice(@PathVariable UUID id, @RequestParam String name, RedirectAttributes redirect) {
+        if (validName(name, redirect)) {
+            devices.rename(organization.currentOrganizationId(), id, name);
+            redirect.addFlashAttribute("noticeKey", "gw.notice.renamed");
+        }
+        return "redirect:/devices";
+    }
+
     @PostMapping("/devices/{id}/revoke")
-    String revokeDevice(@PathVariable UUID id) {
+    String revokeDevice(@PathVariable UUID id, RedirectAttributes redirect) {
         devices.revoke(organization.currentOrganizationId(), id);
+        redirect.addFlashAttribute("noticeKey", "gw.notice.device.revoked");
         return "redirect:/devices";
     }
 
     @GetMapping("/api-keys")
-    String apiKeyList(Model model) {
-        model.addAttribute("apiKeys", apiKeys.list(organization.currentOrganizationId()));
+    String apiKeyList(@RequestParam(defaultValue = "0") int page, Model model) {
+        model.addAttribute("page", apiKeys.page(organization.currentOrganizationId(),
+                PageRequest.of(Math.max(page, 0), LIST_PAGE_SIZE)));
         return "api-keys";
     }
 
@@ -211,15 +227,25 @@ class DashboardController {
         return "redirect:/api-keys";
     }
 
+    @PostMapping("/api-keys/{id}/rename")
+    String renameApiKey(@PathVariable UUID id, @RequestParam String name, RedirectAttributes redirect) {
+        if (validName(name, redirect)) {
+            apiKeys.rename(organization.currentOrganizationId(), id, name);
+            redirect.addFlashAttribute("noticeKey", "gw.notice.renamed");
+        }
+        return "redirect:/api-keys";
+    }
+
     @PostMapping("/api-keys/{id}/revoke")
-    String revokeApiKey(@PathVariable UUID id) {
+    String revokeApiKey(@PathVariable UUID id, RedirectAttributes redirect) {
         apiKeys.revoke(organization.currentOrganizationId(), id);
+        redirect.addFlashAttribute("noticeKey", "gw.notice.key.revoked");
         return "redirect:/api-keys";
     }
 
     private static boolean validName(String name, RedirectAttributes redirect) {
         if (name == null || name.isBlank() || name.trim().length() > MAX_NAME_LENGTH) {
-            redirect.addFlashAttribute("error", "The name is required and must be at most 100 characters.");
+            redirect.addFlashAttribute("errorKey", "gw.error.name");
             return false;
         }
         return true;

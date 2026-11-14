@@ -1,34 +1,32 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
-<head th:replace="~{fragments :: head('Message')}"></head>
+<head th:replace="~{fragments :: head(#{gw.message.title})}"></head>
 <body>
 <header th:replace="~{fragments :: nav('messages')}"></header>
 <main>
-    <p><a th:href="@{/messages}">← Messages</a></p>
-    <h1>Message <span class="mono small" th:text="${message.id}">id</span></h1>
+    <p><a th:href="@{/messages}" th:text="#{gw.message.back}">← Messages</a></p>
+    <h1><span th:text="#{gw.message.title}">Message</span> <span class="mono small" th:text="${message.id}">id</span></h1>
 
     <dl class="details">
-        <dt>Status</dt><dd><span th:replace="~{fragments :: status(${message.status.name()})}"></span></dd>
-        <dt>Recipient</dt><dd class="mono" th:text="${message.recipient}">+243…</dd>
-        <dt>Text</dt>
-        <dd>
-            <span class="muted" th:text="${message.bodyLength} + ' characters, '
-                + (${message.body} != null ? 'not shown' : 'erased after sending')">not shown</span>
-        </dd>
-        <dt>Client</dt><dd th:text="${apiKeyNames[message.apiKeyId]} ?: '—'">app</dd>
-        <dt>Client reference</dt><dd class="mono" th:text="${message.clientReference} ?: '—'">—</dd>
-        <dt>Device</dt><dd th:text="${message.deviceId} != null ? (${deviceNames[message.deviceId]} ?: '—') : '—'">—</dd>
-        <dt>Attempts</dt><dd th:text="${message.attempts}">0</dd>
-        <dt>Failure reason</dt><dd class="mono" th:text="${message.failureReason} ?: '—'">—</dd>
-        <dt>Created</dt><dd th:text="${@fmt.dateTime(message.createdAt)}">—</dd>
-        <dt>Expires</dt><dd th:text="${@fmt.dateTime(message.expiresAt)}">—</dd>
-        <dt>Sent</dt><dd th:text="${@fmt.dateTime(message.sentAt)}">—</dd>
-        <dt>Delivered</dt><dd th:text="${@fmt.dateTime(message.deliveredAt)}">—</dd>
+        <dt th:text="#{gw.col.status}">Status</dt><dd><span th:replace="~{fragments :: status(${message.status.name()})}"></span></dd>
+        <dt th:text="#{gw.col.recipient}">Recipient</dt><dd class="mono" th:text="${message.recipient}">+243…</dd>
+        <dt th:text="#{gw.message.text}">Text</dt>
+        <dd class="muted" th:text="${message.body} != null ? #{gw.message.text.hidden(${message.bodyLength})} : #{gw.message.text.erased(${message.bodyLength})}">not shown</dd>
+        <dt th:text="#{gw.col.client}">Client</dt><dd th:text="${apiKeyNames[message.apiKeyId]} ?: '—'">app</dd>
+        <dt th:text="#{gw.message.reference}">Client reference</dt><dd class="mono" th:text="${message.clientReference} ?: '—'">—</dd>
+        <dt th:text="#{gw.col.device}">Device</dt><dd th:text="${message.deviceId} != null ? (${deviceNames[message.deviceId]} ?: '—') : '—'">—</dd>
+        <dt th:text="#{gw.col.attempts}">Attempts</dt><dd th:text="${message.attempts}">0</dd>
+        <dt th:text="#{gw.message.failure}">Failure reason</dt><dd class="mono" th:text="${message.failureReason} ?: '—'">—</dd>
+        <dt th:text="#{gw.col.created}">Created</dt><dd th:text="${@fmt.dateTime(message.createdAt)}">—</dd>
+        <dt th:text="#{gw.message.expires}">Expires</dt><dd th:text="${@fmt.dateTime(message.expiresAt)}">—</dd>
+        <dt th:text="#{gw.message.sent}">Sent</dt><dd th:text="${@fmt.dateTime(message.sentAt)}">—</dd>
+        <dt th:text="#{gw.message.delivered}">Delivered</dt><dd th:text="${@fmt.dateTime(message.deliveredAt)}">—</dd>
     </dl>
 
-    <h2>History</h2>
+    <h2 th:text="#{gw.message.history}">History</h2>
+    <div class="table-wrap">
     <table>
-        <thead><tr><th>Time</th><th>Status</th><th>Device</th><th>Detail</th></tr></thead>
+        <thead><tr><th th:text="#{gw.col.time}">Time</th><th th:text="#{gw.col.status}">Status</th><th th:text="#{gw.col.device}">Device</th><th th:text="#{gw.col.detail}">Detail</th></tr></thead>
         <tbody>
         <tr th:each="e : ${events}">
             <td th:text="${@fmt.dateTime(e.createdAt)}">—</td>
@@ -38,6 +36,7 @@
         </tr>
         </tbody>
     </table>
+    </div>
 </main>
 </body>
 </html>

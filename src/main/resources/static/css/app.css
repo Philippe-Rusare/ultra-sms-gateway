@@ -202,3 +202,59 @@ button.secondary { background: none; color: var(--accent); border: 1px solid var
 .pager-link:hover { text-decoration: none; border-color: var(--accent); color: var(--accent); }
 .pager-link.disabled { color: var(--muted); opacity: 0.55; pointer-events: none; }
 .pager-info { font-variant-numeric: tabular-nums; }
+
+/* ---- Page header with its main action on the right ---- */
+.page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.page-head h1 { margin-bottom: 4px; }
+.page-head p { margin: 0; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---- Row actions ---- */
+td.actions { white-space: nowrap; text-align: right; }
+td.actions form { display: inline; margin: 0; }
+td.actions > * + * { margin-left: 6px; }
+button.danger-solid { background: var(--danger); color: #fff; }
+
+/* ---- Numbered pagination ---- */
+.pager { flex-wrap: wrap; }
+.pager-pages { display: inline-flex; gap: 4px; }
+.pager-number { min-width: 34px; height: 34px; padding: 0 8px; display: inline-grid; place-items: center; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text); font-variant-numeric: tabular-nums; }
+.pager-number:hover { text-decoration: none; border-color: var(--accent); color: var(--accent); }
+.pager-number.current { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.pager-info { flex-basis: 100%; text-align: center; font-size: 0.85rem; }
+
+/* ---- Dialogs (see js/ui.js) ---- */
+dialog.modal { padding: 0; border: none; background: transparent; color: var(--text); max-width: min(560px, calc(100vw - 24px));
+    width: 100%; max-height: calc(100vh - 32px); overflow: visible; }
+dialog.modal.modal-small { max-width: min(420px, calc(100vw - 24px)); }
+dialog.modal.modal-wide { max-width: min(880px, calc(100vw - 24px)); }
+dialog.modal::backdrop { background: rgba(8, 12, 24, .55); backdrop-filter: blur(3px); }
+dialog.modal[open] { animation: modal-in .22s cubic-bezier(.2, .7, .2, 1); }
+dialog.modal[open]::backdrop { animation: modal-fade .22s ease; }
+@keyframes modal-in { from { opacity: 0; transform: translateY(12px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes modal-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { dialog.modal[open], dialog.modal[open]::backdrop { animation: none; } }
+.modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 24px 64px rgba(8, 12, 24, .3);
+    max-height: calc(100vh - 32px); overflow: auto; }
+.modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px 0; }
+.modal-head h2 { margin: 0; font-size: 1.15rem; }
+.modal-close { font-size: 1.5rem; line-height: 1; padding: 4px 8px !important; border-radius: 8px; color: var(--muted); }
+.modal-close:hover { background: var(--bg); color: var(--text); }
+.modal-body { padding: 14px 20px 4px; }
+.modal-body > p { margin: 0; }
+.modal-body label input, .modal-body label select { width: 100%; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; padding: 16px 20px 18px; }
+.confirm-text { line-height: 1.5; }
+body.is-busy { cursor: progress; }
+
+/* ---- A wide table scrolls sideways inside its own frame instead of widening the page ---- */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; }
+.table-wrap > table { min-width: 100%; overflow: visible; }
+@media (max-width: 760px) {
+    .table-wrap > table { display: table; }
+}
+/* The row actions stay in view on the right while a wide table scrolls. */
+.table-wrap th.actions, .table-wrap td.actions { position: sticky; right: 0; box-shadow: -10px 0 12px -12px rgba(16, 24, 48, .35); }
+.table-wrap td.actions { background: var(--surface); }
+.table-wrap th.actions { background: inherit; }

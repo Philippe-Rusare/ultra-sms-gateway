@@ -1,39 +1,48 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
+<!-- Layout pieces of the dashboard. Texts: i18n/gateway*.properties. -->
 <head th:fragment="head(title)">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title th:text="${title} + ' · Ultra SMS Gateway'">Ultra SMS Gateway</title>
     <link rel="icon" type="image/svg+xml" th:href="@{/img/logo.svg}">
     <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script th:src="@{/js/ui.js}" defer></script>
+    <script th:inline="javascript">document.documentElement.lang = /*[[${#locale.language}]]*/ 'en';</script>
     <th:block th:replace="~{extensions :: head-extra}"></th:block>
 </head>
 <body>
 <header th:fragment="nav(active)" class="topbar">
     <a class="brand" th:href="@{/}"><img th:src="@{/img/logo.svg}" alt="">Ultra SMS Gateway</a>
     <nav>
-        <a th:href="@{/}" th:classappend="${active == 'overview'} ? 'active'">Overview</a>
-        <a th:href="@{/messages}" th:classappend="${active == 'messages'} ? 'active'">Messages</a>
-        <a th:href="@{/devices}" th:classappend="${active == 'devices'} ? 'active'">Devices</a>
-        <a th:href="@{/api-keys}" th:classappend="${active == 'api-keys'} ? 'active'">API keys</a>
-        <a th:href="@{/swagger-ui.html}">API docs</a>
+        <a th:href="@{/}" th:classappend="${active == 'overview'} ? 'active'" th:text="#{gw.nav.overview}">Overview</a>
+        <a th:href="@{/messages}" th:classappend="${active == 'messages'} ? 'active'" th:text="#{gw.nav.messages}">Messages</a>
+        <a th:href="@{/devices}" th:classappend="${active == 'devices'} ? 'active'" th:text="#{gw.nav.devices}">Devices</a>
+        <a th:href="@{/api-keys}" th:classappend="${active == 'api-keys'} ? 'active'" th:text="#{gw.nav.apikeys}">API keys</a>
+        <a th:href="@{/swagger-ui.html}" th:text="#{gw.nav.docs}">API docs</a>
         <th:block th:replace="~{extensions :: nav-links(${active})}"></th:block>
     </nav>
     <th:block th:replace="~{extensions :: nav-account}"></th:block>
     <form th:action="@{/logout}" method="post">
-        <button type="submit" class="link">Sign out</button>
+        <button type="submit" class="link" th:text="#{gw.nav.signout}">Sign out</button>
     </form>
 </header>
 
+<!-- The badge of a message status; `value` is the name of the status, e.g. QUEUED. -->
 <span th:fragment="status(value)" class="badge" th:classappend="'status-' + ${#strings.toLowerCase(value)}"
-      th:text="${value}">QUEUED</span>
+      th:text="#{'gw.status.' + ${value}}">Queued</span>
 
-<div th:fragment="issued(label)" th:if="${issuedSecret}" class="notice">
-    <strong th:text="${label} + ' created for ' + ${issuedName} + '.'">Created.</strong>
-    Copy it now: it will not be shown again.
+<!-- A secret just created, shown once. `label` is a message key taking the name, e.g. gw.issued.apikey. -->
+<div th:fragment="issued(label)" th:if="${issuedSecret}" class="notice notice-secret" role="status">
+    <strong th:text="#{${label}(${issuedName})}">Created.</strong>
+    <span th:text="#{gw.issued.copy}">Copy it now.</span>
     <code class="secret" th:text="${issuedSecret}">secret</code>
 </div>
 
-<div th:fragment="error" th:if="${error}" class="notice notice-error" th:text="${error}">Error</div>
+<!-- Result of the last change: message keys set by the controller (noticeKey, errorKey). -->
+<th:block th:fragment="error">
+    <div th:if="${noticeKey}" class="notice" role="status" th:text="#{${noticeKey}}">Saved.</div>
+    <div th:if="${errorKey}" class="notice notice-error" role="alert" th:text="#{${errorKey}}">Error</div>
+</th:block>
 </body>
 </html>

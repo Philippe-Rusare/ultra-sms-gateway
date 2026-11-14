@@ -1,42 +1,89 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
-<head th:replace="~{fragments :: head('API keys')}"></head>
+<head th:replace="~{fragments :: head(#{gw.keys.title})}"></head>
 <body>
 <header th:replace="~{fragments :: nav('api-keys')}"></header>
 <main>
-    <h1>API keys</h1>
-    <p class="muted">One key per client application. Send it in the <code>X-Api-Key</code> header.</p>
+    <div class="page-head">
+        <div>
+            <h1 th:text="#{gw.keys.title}">API keys</h1>
+            <p class="muted"><span th:text="#{gw.keys.intro}">One key per client application, sent in the header</span> <code>X-Api-Key</code>.</p>
+        </div>
+        <button type="button" data-dialog="create-key" th:text="#{gw.keys.create}">Create a key</button>
+    </div>
 
-    <div th:replace="~{fragments :: error}"></div>
-    <div th:replace="~{fragments :: issued('API key')}"></div>
+    <th:block th:replace="~{fragments :: error}"></th:block>
+    <div th:replace="~{fragments :: issued('gw.issued.apikey')}"></div>
 
-    <form th:action="@{/api-keys}" method="post" class="inline-form">
-        <input type="text" name="name" maxlength="100" placeholder="e.g. notification-service" required>
-        <button type="submit">Create key</button>
-    </form>
-
+    <div class="table-wrap">
     <table>
-        <thead><tr><th>Name</th><th>Key</th><th>State</th><th>Created</th><th>Last used</th><th></th></tr></thead>
+        <thead><tr><th th:text="#{gw.col.name}">Name</th><th th:text="#{gw.col.key}">Key</th><th th:text="#{gw.col.state}">State</th>
+            <th th:text="#{gw.col.created}">Created</th><th th:text="#{gw.col.lastused}">Last used</th>
+            <th class="actions"><span class="visually-hidden" th:text="#{gw.col.actions}">Actions</span></th></tr></thead>
         <tbody>
-        <tr th:if="${#lists.isEmpty(apiKeys)}" class="empty-row"><td colspan="6">No API key yet. Create one above for your application.</td></tr>
-        <tr th:each="k : ${apiKeys}">
+        <tr th:if="${page.empty}" class="empty-row"><td colspan="6" th:text="#{gw.keys.empty}">No API key yet.</td></tr>
+        <tr th:each="k : ${page.content}">
             <td th:text="${k.name}">app</td>
             <td class="mono small" th:text="${k.keyPrefix} + '…'">usg_…</td>
             <td>
-                <span th:if="${k.active}" class="badge status-delivered">Active</span>
-                <span th:unless="${k.active}" class="badge status-failed">Revoked</span>
+                <span th:if="${k.active}" class="badge status-delivered" th:text="#{gw.state.active}">Active</span>
+                <span th:unless="${k.active}" class="badge status-failed" th:text="#{gw.state.revoked}">Revoked</span>
             </td>
             <td th:text="${@fmt.dateTime(k.createdAt)}">—</td>
             <td th:text="${@fmt.dateTime(k.lastUsedAt)}">—</td>
-            <td>
+            <td class="actions">
+                <button type="button" class="secondary small" data-dialog="rename-key"
+                        th:data-action="@{/api-keys/{id}/rename(id=${k.id})}" th:data-set-name="${k.name}"
+                        th:text="#{gw.common.rename}">Rename</button>
                 <form th:if="${k.active}" th:action="@{/api-keys/{id}/revoke(id=${k.id})}" method="post"
-                      onsubmit="return confirm('Revoke this key? Applications using it will get 401.');">
-                    <button type="submit" class="danger small">Revoke</button>
+                      th:data-confirm="#{gw.keys.revoke.text}" th:data-confirm-title="#{gw.keys.revoke.title}"
+                      th:data-confirm-ok="#{gw.keys.revoke}" th:data-confirm-cancel="#{gw.confirm.cancel}">
+                    <button type="submit" class="danger small" th:text="#{gw.keys.revoke}">Revoke</button>
                 </form>
             </td>
         </tr>
         </tbody>
     </table>
+    </div>
+    <nav th:replace="~{pagination :: pager(${page}, @{/api-keys}, 'gw.pager.keys')}"></nav>
+
+    <dialog class="modal" id="create-key" aria-labelledby="create-key-title">
+        <div class="modal-box">
+            <div class="modal-head">
+                <h2 id="create-key-title" th:text="#{gw.keys.create.title}">Create an API key</h2>
+                <button type="button" class="link modal-close" data-dialog-close th:aria-label="#{gw.common.close}">×</button>
+            </div>
+            <form th:action="@{/api-keys}" method="post">
+                <div class="modal-body stack">
+                    <p class="muted" th:text="#{gw.keys.create.intro}">Intro</p>
+                    <label><span th:text="#{gw.common.name}">Name</span>
+                        <input type="text" name="name" maxlength="100" th:placeholder="#{gw.keys.create.placeholder}" required autofocus></label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="secondary" data-dialog-close th:text="#{gw.common.cancel}">Cancel</button>
+                    <button type="submit" th:text="#{gw.keys.create.submit}">Create the key</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
+    <dialog class="modal modal-small" id="rename-key" aria-labelledby="rename-key-title">
+        <div class="modal-box">
+            <div class="modal-head">
+                <h2 id="rename-key-title" th:text="#{gw.keys.rename.title}">Rename</h2>
+                <button type="button" class="link modal-close" data-dialog-close th:aria-label="#{gw.common.close}">×</button>
+            </div>
+            <form method="post" th:action="@{/api-keys}">
+                <div class="modal-body stack">
+                    <label><span th:text="#{gw.common.name}">Name</span><input type="text" name="name" maxlength="100" required></label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="secondary" data-dialog-close th:text="#{gw.common.cancel}">Cancel</button>
+                    <button type="submit" th:text="#{gw.common.save}">Save</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
 </main>
 </body>
 </html>

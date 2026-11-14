@@ -1,59 +1,105 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
-<head th:replace="~{fragments :: head('Devices')}"></head>
+<head th:replace="~{fragments :: head(#{gw.devices.title})}"></head>
 <body>
 <header th:replace="~{fragments :: nav('devices')}"></header>
 <main>
-    <h1>Devices</h1>
-    <p class="muted">Each Android phone connects with its own token. Add a device, then scan its QR code with the app.</p>
+    <div class="page-head">
+        <div>
+            <h1 th:text="#{gw.devices.title}">Devices</h1>
+            <p class="muted" th:text="#{gw.devices.intro}">Intro</p>
+        </div>
+        <button type="button" data-dialog="add-device" th:text="#{gw.devices.add}">Add a device</button>
+    </div>
 
-    <div th:replace="~{fragments :: error}"></div>
-    <div th:replace="~{fragments :: issued('Device token')}"></div>
+    <th:block th:replace="~{fragments :: error}"></th:block>
+    <div th:replace="~{fragments :: issued('gw.issued.device')}"></div>
 
     <dl class="details">
-        <dt>Server URL</dt><dd><code th:text="${serverUrl}">ws://localhost:8080/v1/device/ws</code></dd>
+        <dt th:text="#{gw.devices.server}">Server URL</dt><dd><code th:text="${serverUrl}">ws://localhost:8080/v1/device/ws</code></dd>
     </dl>
 
-    <form th:action="@{/devices/pair}" method="post" class="inline-form">
-        <input type="text" name="name" maxlength="100" placeholder="e.g. Vodacom phone 1" required>
-        <button type="submit">Add device with a QR code</button>
-        <button type="submit" class="secondary" th:formaction="@{/devices}"
-                title="Shows a token to type in the app, for a phone that cannot scan">Create a token instead</button>
-    </form>
-
+    <div class="table-wrap">
     <table>
         <thead>
-        <tr><th>Name</th><th>Token</th><th>State</th><th>Operator</th><th>Network</th><th class="num">Signal</th>
-            <th class="num">Battery</th><th>App</th><th>Last seen</th><th></th></tr>
+        <tr><th th:text="#{gw.col.name}">Name</th><th th:text="#{gw.col.token}">Token</th><th th:text="#{gw.col.state}">State</th>
+            <th th:text="#{gw.col.operator}">Operator</th><th th:text="#{gw.col.network}">Network</th><th class="num" th:text="#{gw.col.signal}">Signal</th>
+            <th class="num" th:text="#{gw.col.battery}">Battery</th><th th:text="#{gw.col.app}">App</th><th th:text="#{gw.col.lastseen}">Last seen</th>
+            <th class="actions"><span class="visually-hidden" th:text="#{gw.col.actions}">Actions</span></th></tr>
         </thead>
         <tbody>
-        <tr th:if="${#lists.isEmpty(devices)}" class="empty-row"><td colspan="10">No device yet. Add one above, then scan its QR code with the app.</td></tr>
-        <tr th:each="view : ${devices}" th:with="d=${view.device}">
+        <tr th:if="${page.empty}" class="empty-row"><td colspan="10" th:text="#{gw.devices.empty}">No device yet.</td></tr>
+        <tr th:each="view : ${page.content}" th:with="d=${view.device}">
             <td th:text="${d.name}">Phone</td>
             <td class="mono small" th:text="${d.tokenPrefix} + '…'">usgd_…</td>
             <td>
-                <span th:if="${!d.active}" class="badge status-failed">Revoked</span>
-                <span th:if="${d.active and view.online}" class="badge status-delivered">Online</span>
-                <span th:if="${d.active and !view.online}" class="badge status-expired">Offline</span>
+                <span th:if="${!d.active}" class="badge status-failed" th:text="#{gw.state.revoked}">Revoked</span>
+                <span th:if="${d.active and view.online}" class="badge status-delivered" th:text="#{gw.state.online}">Online</span>
+                <span th:if="${d.active and !view.online}" class="badge status-expired" th:text="#{gw.state.offline}">Offline</span>
             </td>
             <td th:text="${d.operatorName} ?: '—'">—</td>
             <td th:text="${d.networkType} ?: '—'">—</td>
             <td class="num" th:text="${d.signalLevel} != null ? ${d.signalLevel} + ' / 4' : '—'">—</td>
             <td class="num">
                 <span th:text="${d.batteryLevel} != null ? ${d.batteryLevel} + ' %' : '—'">—</span>
-                <span th:if="${d.charging}" title="Charging">⚡</span>
+                <span th:if="${d.charging}" th:title="#{gw.devices.charging}">⚡</span>
             </td>
             <td th:text="${d.appVersion} ?: '—'">—</td>
             <td th:text="${@fmt.dateTime(d.lastSeenAt)}">—</td>
-            <td>
+            <td class="actions">
+                <button type="button" class="secondary small" data-dialog="rename-device"
+                        th:data-action="@{/devices/{id}/rename(id=${d.id})}" th:data-set-name="${d.name}"
+                        th:text="#{gw.common.rename}">Rename</button>
                 <form th:if="${d.active}" th:action="@{/devices/{id}/revoke(id=${d.id})}" method="post"
-                      onsubmit="return confirm('Revoke this device? It will be disconnected.');">
-                    <button type="submit" class="danger small">Revoke</button>
+                      th:data-confirm="#{gw.devices.revoke.text}" th:data-confirm-title="#{gw.devices.revoke.title}"
+                      th:data-confirm-ok="#{gw.devices.revoke}" th:data-confirm-cancel="#{gw.confirm.cancel}">
+                    <button type="submit" class="danger small" th:text="#{gw.devices.revoke}">Revoke</button>
                 </form>
             </td>
         </tr>
         </tbody>
     </table>
+    </div>
+    <nav th:replace="~{pagination :: pager(${page}, @{/devices}, 'gw.pager.devices')}"></nav>
+
+    <dialog class="modal" id="add-device" aria-labelledby="add-device-title">
+        <div class="modal-box">
+            <div class="modal-head">
+                <h2 id="add-device-title" th:text="#{gw.devices.add.title}">Add a device</h2>
+                <button type="button" class="link modal-close" data-dialog-close th:aria-label="#{gw.common.close}">×</button>
+            </div>
+            <form th:action="@{/devices/pair}" method="post">
+                <div class="modal-body stack">
+                    <p class="muted" th:text="#{gw.devices.add.intro}">Intro</p>
+                    <label><span th:text="#{gw.common.name}">Name</span>
+                        <input type="text" name="name" maxlength="100" th:placeholder="#{gw.devices.add.placeholder}" required autofocus></label>
+                    <p class="muted small" th:text="#{gw.devices.add.token.hint}">Hint</p>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="secondary" th:formaction="@{/devices}" th:text="#{gw.devices.add.token}">Create a token instead</button>
+                    <button type="submit" th:text="#{gw.devices.add.qr}">Continue with a QR code</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
+    <dialog class="modal modal-small" id="rename-device" aria-labelledby="rename-device-title">
+        <div class="modal-box">
+            <div class="modal-head">
+                <h2 id="rename-device-title" th:text="#{gw.devices.rename.title}">Rename</h2>
+                <button type="button" class="link modal-close" data-dialog-close th:aria-label="#{gw.common.close}">×</button>
+            </div>
+            <form method="post" th:action="@{/devices}">
+                <div class="modal-body stack">
+                    <label><span th:text="#{gw.common.name}">Name</span><input type="text" name="name" maxlength="100" required></label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="secondary" data-dialog-close th:text="#{gw.common.cancel}">Cancel</button>
+                    <button type="submit" th:text="#{gw.common.save}">Save</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
 </main>
 </body>
 </html>

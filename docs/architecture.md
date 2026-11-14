@@ -67,6 +67,18 @@ Extension points:
 | `gateway.dashboard.login=external` | Switches off the built-in administrator (`BuiltinDashboardSecurity`) and declares its own `SecurityFilterChain` for the dashboard, ordered after the API and device chains, with its own users. Without that chain the dashboard would be unprotected. |
 | `templates/extensions.html` | Provides its own file with the fragments `nav-links(active)`, `nav-account`, `head-extra` and `overview-top`, to add pages to the menu, show the signed-in account, load a stylesheet and add content at the top of the Overview page. All four fragments must be present. |
 | `templates/login.html` | Provides its own sign-in page, posting `username` and `password` to `/login`. |
+| `templates/fragments.html` | Provides its own layout (fragments `head(title)`, `nav(active)`, `status(value)`, `issued(label)`, `error`), to replace the top bar entirely. |
+| `i18n/gateway*.properties` | The texts of the pages, in English (`gateway.properties`) and French (`gateway_fr.properties`). An embedding application adds `i18n/gateway` to `spring.messages.basename` and chooses the language with its own `LocaleResolver`. |
+
+## Dashboard pages
+
+- **Languages.** Every text comes from `i18n/gateway*.properties`; the language follows the browser, English when
+  it asks for one we do not have.
+- **Dialogs.** `static/js/ui.js` opens `<dialog>` elements (`data-dialog`), asks for confirmation before a
+  destructive form is sent (`data-confirm`) and can load a page into a dialog (`data-modal-remote`, answered with
+  the `X-Modal` header). Without JavaScript the forms still work as plain pages.
+- **Lists.** Messages (50 per page), devices and API keys (20 per page) are paged with the `pagination :: pager`
+  fragment. Devices and API keys can be renamed; revoking asks for confirmation.
 
 ## The queue is a table
 

@@ -1,28 +1,28 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
-<head th:replace="~{fragments :: head('Overview')}"></head>
+<head th:replace="~{fragments :: head(#{gw.overview.title})}"></head>
 <body>
 <header th:replace="~{fragments :: nav('overview')}"></header>
 <main>
-    <h1>Overview</h1>
+    <h1 th:text="#{gw.overview.title}">Overview</h1>
     <th:block th:replace="~{extensions :: overview-top}"></th:block>
 
     <section class="tiles">
         <div class="tile">
-            <span class="tile-label">Waiting in queue</span>
+            <span class="tile-label" th:text="#{gw.overview.queue}">Waiting in queue</span>
             <span class="tile-value" th:text="${queuedNow}">0</span>
         </div>
         <div class="tile">
-            <span class="tile-label">Messages, last 24 h</span>
+            <span class="tile-label" th:text="#{gw.overview.last24h}">Messages, last 24 h</span>
             <span class="tile-value" th:text="${total24h}">0</span>
         </div>
         <div class="tile">
-            <span class="tile-label">Success rate, 7 days</span>
+            <span class="tile-label" th:text="#{gw.overview.success}">Success rate, 7 days</span>
             <span class="tile-value" th:text="${successRate} != null ? ${successRate} + ' %' : '—'">—</span>
-            <span class="tile-note">sent or delivered, among finished messages</span>
+            <span class="tile-note" th:text="#{gw.overview.success.note}">sent or delivered</span>
         </div>
         <div class="tile">
-            <span class="tile-label">Devices online</span>
+            <span class="tile-label" th:text="#{gw.overview.online}">Devices online</span>
             <span class="tile-value"
                   th:text="${#lists.size(devices.?[online])} + ' / ' + ${#lists.size(devices)}">0 / 0</span>
         </div>
@@ -30,18 +30,17 @@
 
     <section class="panel chart-panel">
         <div class="chart-head">
-            <h2>Messages by outcome, last 14 days</h2>
+            <h2 th:text="#{gw.overview.chart}">Messages by outcome, last 14 days</h2>
             <ul class="legend">
                 <li th:each="s : ${chartSeries}">
                     <span class="swatch" th:classappend="'series-' + ${s.cssClass()}"></span>
-                    <span th:text="${s.label()}">Delivered</span>
+                    <span th:text="#{'gw.series.' + ${s.cssClass()}}">Delivered</span>
                 </li>
             </ul>
         </div>
         <div class="chart-wrap">
-            <p th:if="${chart.total == 0}" class="chart-empty-note">No finished message in the last 14 days. The chart fills in as messages are sent.</p>
-            <svg class="chart" th:attr="viewBox='0 0 ' + ${chart.width} + ' ' + ${chart.height}" role="img"
-                 aria-label="Stacked columns of messages per day over the last 14 days, by outcome. Exact figures by status are in the table below.">
+            <p th:if="${chart.total == 0}" class="chart-empty-note" th:text="#{gw.overview.chart.empty}">No finished message.</p>
+            <svg class="chart" th:attr="viewBox='0 0 ' + ${chart.width} + ' ' + ${chart.height}" role="img" th:aria-label="#{gw.overview.chart.label}">
                 <g class="chart-grid">
                     <line th:each="t : ${chart.ticks}"
                           th:attr="x1=${chart.plotLeft()},x2=${chart.plotRight()},y1=${t.y},y2=${t.y}"/>
@@ -58,13 +57,16 @@
                           th:attr="x=${b.centerX},y=${chart.baseline() + 18}" th:text="${b.dayLabel}">9 Nov</text>
                 </g>
             </svg>
-            <div class="chart-tooltip" role="status" hidden></div>
+            <div class="chart-tooltip" role="status" hidden th:data-total="#{gw.overview.chart.total}"
+                 th:data-delivered="#{gw.series.delivered}" th:data-sent="#{gw.series.sent}"
+                 th:data-failed="#{gw.series.failed}" th:data-expired="#{gw.series.expired}"></div>
         </div>
     </section>
 
-    <h2>Last 24 hours by status</h2>
+    <h2 th:text="#{gw.overview.bystatus}">Last 24 hours by status</h2>
+    <div class="table-wrap">
     <table>
-        <thead><tr><th>Status</th><th class="num">Messages</th></tr></thead>
+        <thead><tr><th th:text="#{gw.col.status}">Status</th><th class="num" th:text="#{gw.col.messages}">Messages</th></tr></thead>
         <tbody>
         <tr th:each="entry : ${counts}">
             <td>
@@ -76,18 +78,20 @@
         </tr>
         </tbody>
     </table>
+    </div>
 
-    <h2>Devices</h2>
+    <h2 th:text="#{gw.overview.devices}">Devices</h2>
+    <div class="table-wrap">
     <table>
-        <thead><tr><th>Name</th><th>State</th><th>Operator</th><th class="num">Battery</th><th>Last seen</th></tr></thead>
+        <thead><tr><th th:text="#{gw.col.name}">Name</th><th th:text="#{gw.col.state}">State</th><th th:text="#{gw.col.operator}">Operator</th><th class="num" th:text="#{gw.col.battery}">Battery</th><th th:text="#{gw.col.lastseen}">Last seen</th></tr></thead>
         <tbody>
-        <tr th:if="${#lists.isEmpty(devices)}" class="empty-row"><td colspan="5">No device yet. <a th:href="@{/devices}">Add one</a> and scan its QR code with the app.</td></tr>
+        <tr th:if="${#lists.isEmpty(devices)}" class="empty-row"><td colspan="5"><span th:text="#{gw.overview.devices.empty}">No device yet.</span> <a th:href="@{/devices}" th:text="#{gw.overview.devices.add}">Add a device</a></td></tr>
         <tr th:each="view : ${devices}" th:with="d=${view.device}">
             <td th:text="${d.name}">Phone</td>
             <td>
-                <span th:if="${!d.active}" class="badge status-failed">Revoked</span>
-                <span th:if="${d.active and view.online}" class="badge status-delivered">Online</span>
-                <span th:if="${d.active and !view.online}" class="badge status-expired">Offline</span>
+                <span th:if="${!d.active}" class="badge status-failed" th:text="#{gw.state.revoked}">Revoked</span>
+                <span th:if="${d.active and view.online}" class="badge status-delivered" th:text="#{gw.state.online}">Online</span>
+                <span th:if="${d.active and !view.online}" class="badge status-expired" th:text="#{gw.state.offline}">Offline</span>
             </td>
             <td th:text="${d.operatorName} ?: '—'">Vodacom</td>
             <td class="num" th:text="${d.batteryLevel} != null ? ${d.batteryLevel} + ' %' : '—'">80 %</td>
@@ -95,7 +99,8 @@
         </tr>
         </tbody>
     </table>
-    <p class="muted small">Times are shown in <span th:text="${@fmt.zone()}">UTC</span>.</p>
+    </div>
+    <p class="muted small" th:text="#{gw.overview.zone(${@fmt.zone()})}">Times are shown in UTC.</p>
 </main>
 
 <!-- th:inline="none": nested JavaScript arrays must not be read as Thymeleaf inlined expressions. -->
@@ -105,7 +110,8 @@
         if (!wrap) return;
         var svg = wrap.querySelector('svg');
         var tip = wrap.querySelector('.chart-tooltip');
-        var rows = [['delivered', 'Delivered'], ['sent', 'Sent'], ['failed', 'Failed'], ['expired', 'Expired']];
+        var labels = tip.dataset;
+        var rows = [['delivered', labels.delivered], ['sent', labels.sent], ['failed', labels.failed], ['expired', labels.expired]];
 
         function show(bar) {
             var d = bar.dataset;
@@ -113,7 +119,7 @@
             rows.forEach(function (row) {
                 html += '<tr><td><span class="swatch series-' + row[0] + '"></span>' + row[1] + '</td><td class="num">' + d[row[0]] + '</td></tr>';
             });
-            html += '<tr class="tip-total"><td>Total</td><td class="num">' + d.total + '</td></tr></table>';
+            html += '<tr class="tip-total"><td>' + labels.total + '</td><td class="num">' + d.total + '</td></tr></table>';
             tip.innerHTML = html;
             tip.hidden = false;
             var box = svg.getBoundingClientRect();

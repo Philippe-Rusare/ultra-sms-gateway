@@ -62,9 +62,9 @@ class DashboardTest extends IntegrationTest {
     @Test
     void everyPageRenders() throws Exception {
         assertThat(page("/")).contains("Waiting in queue", "dashboard-phone", "Messages by outcome", "series-sent", "100 %");
-        assertThat(page("/messages")).contains("+243812345678", "SENT");
+        assertThat(page("/messages")).contains("+243812345678", "Sent");
         assertThat(page("/messages?status=SENT&recipient=2438")).contains("+243812345678");
-        assertThat(page("/messages/" + messageId)).contains("History", "erased after sending", "DISPATCHED");
+        assertThat(page("/messages/" + messageId)).contains("History", "erased after sending", "Dispatched");
         assertThat(page("/devices")).contains("/v1/device/ws", "dashboard-phone");
         assertThat(page("/api-keys")).contains("dashboard-client");
     }
@@ -96,7 +96,7 @@ class DashboardTest extends IntegrationTest {
         String pairingPath = URI.create(started.headers().firstValue("Location").orElseThrow()).getPath();
 
         String page = page(pairingPath);
-        assertThat(page).contains("Add <span>qr-phone</span>", "<svg", "Scan the QR code", "Waiting for the phone");
+        assertThat(page).contains("Add qr-phone", "<svg", "Scan the QR code", "Waiting for the phone");
         Matcher link = Pattern.compile("ultrasms://pair\\?server=([^&]+)&amp;code=(usgp_[A-Za-z0-9_-]+)").matcher(page);
         assertThat(link.find()).as("pairing link on the page").isTrue();
         assertThat(java.net.URLDecoder.decode(link.group(1), StandardCharsets.UTF_8)).isEqualTo("http://localhost:" + port);
@@ -128,6 +128,43 @@ class DashboardTest extends IntegrationTest {
 
         assertThat(page("/api-keys")).contains("API key created for new-app", "usg_");
         assertThat(page("/api-keys")).doesNotContain("API key created for new-app");
+    }
+
+    @Test
+    void devicesAndKeysCanBeRenamedAndTheirListsArePaged() throws Exception {
+        UUID keyId = apiKeys.create(Organization.DEFAULT_ID, "rename-me").value().getId();
+        submit("/api-keys", "/api-keys/" + keyId + "/rename", "name=renamed-key");
+        assertThat(page("/api-keys")).contains("renamed-key", "Name changed.").doesNotContain(">rename-me<");
+
+        UUID deviceId = devices.create(Organization.DEFAULT_ID, "rename-phone").value().getId();
+        submit("/devices", "/devices/" + deviceId + "/rename", "name=%20");
+        assertThat(page("/devices")).contains("The name is required", "rename-phone");
+        submit("/devices", "/devices/" + deviceId + "/rename", "name=renamed-phone");
+        assertThat(page("/devices")).contains("renamed-phone");
+
+        for (int i = 0; i < DashboardController.LIST_PAGE_SIZE; i++) {
+            apiKeys.create(Organization.DEFAULT_ID, "paged-key-" + i);
+        }
+        assertThat(page("/api-keys")).contains("Page 1 of", "rel=\"next\"", "?page=1");
+        assertThat(page("/api-keys?page=1")).contains("Page 2 of", "rel=\"prev\"");
+    }
+
+    @Test
+    void pagesFollowTheLanguageOfTheBrowser() throws Exception {
+        String french = browser.send(HttpRequest.newBuilder(url("/devices")).header("Accept-Language", "fr-FR,fr;q=0.9").GET().build(),
+                HttpResponse.BodyHandlers.ofString()).body();
+        assertThat(french).contains("Téléphones", "Ajouter un téléphone", "Se déconnecter").doesNotContain("??");
+        assertThat(page("/devices")).contains("Add a device", "Sign out").doesNotContain("??");
+        String spanish = browser.send(HttpRequest.newBuilder(url("/")).header("Accept-Language", "es").GET().build(),
+                HttpResponse.BodyHandlers.ofString()).body();
+        assertThat(spanish).contains("Waiting in queue").doesNotContain("??");
+    }
+
+    private void submit(String formPage, String action, String body) throws Exception {
+        HttpResponse<String> response = browser.send(HttpRequest.newBuilder(url(action))
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .POST(HttpRequest.BodyPublishers.ofString(body + "&_csrf=" + csrf(formPage))).build(), HttpResponse.BodyHandlers.ofString());
+        assertThat(response.statusCode()).as(action).isEqualTo(302);
     }
 
     private String page(String path) throws Exception {

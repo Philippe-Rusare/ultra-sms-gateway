@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
-<head th:replace="~{fragments :: head('Sign in')}"></head>
+<head th:replace="~{fragments :: head(#{gw.login.title})}"></head>
 <body class="auth">
 <main class="auth-form-side">
     <div class="auth-form-wrap">
@@ -8,27 +8,28 @@
             <img th:src="@{/img/logo.svg}" src="../static/img/logo.svg" alt="" width="44" height="44">
             <div>
                 <span class="auth-brand-name">Ultra SMS Gateway</span>
-                <span class="auth-brand-sub">Admin console</span>
+                <span class="auth-brand-sub" th:text="#{gw.login.sub}">Admin console</span>
             </div>
         </div>
 
-        <h1>Welcome back</h1>
-        <p class="muted">Sign in to follow your messages, phones and API keys.</p>
+        <h1 th:text="#{gw.login.welcome}">Welcome back</h1>
+        <p class="muted" th:text="#{gw.login.intro}">Intro</p>
 
-        <p th:if="${param.error}" class="notice notice-error" role="alert">Wrong username or password.</p>
-        <p th:if="${param.logout}" class="notice" role="status">You are signed out.</p>
+        <p th:if="${param.error}" class="notice notice-error" role="alert" th:text="#{gw.login.error}">Wrong username or password.</p>
+        <p th:if="${param.logout}" class="notice" role="status" th:text="#{gw.login.out}">You are signed out.</p>
 
         <form th:action="@{/login}" method="post" class="stack auth-form">
             <label>
-                <span>Username <span class="required" aria-hidden="true">*</span></span>
-                <input type="text" name="username" autocomplete="username" placeholder="Enter your username" required autofocus>
+                <span><span th:text="#{gw.login.username}">Username</span> <span class="required" aria-hidden="true">*</span></span>
+                <input type="text" name="username" autocomplete="username" th:placeholder="#{gw.login.username.placeholder}" required autofocus>
             </label>
             <label>
-                <span>Password <span class="required" aria-hidden="true">*</span></span>
+                <span><span th:text="#{gw.login.password}">Password</span> <span class="required" aria-hidden="true">*</span></span>
                 <span class="password-field">
                     <input type="password" name="password" id="password" autocomplete="current-password"
-                           placeholder="Enter your password" required>
-                    <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false"
+                           th:placeholder="#{gw.login.password.placeholder}" required>
+                    <button type="button" class="password-toggle" th:aria-label="#{gw.login.password.show}" aria-pressed="false"
+                            th:data-show="#{gw.login.password.show}" th:data-hide="#{gw.login.password.hide}"
                             onclick="togglePassword(this)">
                         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
                             <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="1.8"/>
@@ -37,7 +38,7 @@
                     </button>
                 </span>
             </label>
-            <button type="submit" class="auth-submit">Sign in</button>
+            <button type="submit" class="auth-submit" th:text="#{gw.login.submit}">Sign in</button>
         </form>
     </div>
 </main>
@@ -54,12 +55,12 @@
             <img th:src="@{/img/logo-inverse.svg}" src="../static/img/logo-inverse.svg" alt="" width="36" height="36">
             <span>Ultra SMS Gateway</span>
         </div>
-        <h2>Send SMS through your own phones, at the price of your bundles.</h2>
-        <p>A self-hosted gateway: your applications queue messages, Android phones send them with their SIM cards.</p>
+        <h2 th:text="#{gw.login.hero}">Hero</h2>
+        <p th:text="#{gw.login.hero.text}">Text</p>
         <ul>
-            <li><strong>Your SIM, your price.</strong> Every SMS uses your operator's bundles instead of a paid SMS API.</li>
-            <li><strong>Nothing gets lost.</strong> Messages wait in the queue until a phone is online, and expire when they are no longer useful.</li>
-            <li><strong>Everything is audited.</strong> Each status change is recorded; message texts are erased once sent.</li>
+            <li th:text="#{gw.login.hero.1}">1</li>
+            <li th:text="#{gw.login.hero.2}">2</li>
+            <li th:text="#{gw.login.hero.3}">3</li>
         </ul>
     </div>
 </aside>
@@ -70,7 +71,7 @@
         var show = input.type === 'password';
         input.type = show ? 'text' : 'password';
         button.setAttribute('aria-pressed', String(show));
-        button.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+        button.setAttribute('aria-label', show ? button.dataset.hide : button.dataset.show);
     }
 </script>
 </body>

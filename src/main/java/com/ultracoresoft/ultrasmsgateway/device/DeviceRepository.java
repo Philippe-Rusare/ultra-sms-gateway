@@ -3,6 +3,8 @@ package com.ultracoresoft.ultrasmsgateway.device;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface DeviceRepository extends JpaRepository<Device, UUID> {
@@ -12,4 +14,6 @@ public interface DeviceRepository extends JpaRepository<Device, UUID> {
     Optional<Device> findByIdAndOrganizationId(UUID id, UUID organizationId);
 
     List<Device> findAllByOrganizationIdOrderByCreatedAtDesc(UUID organizationId);
+
+    Page<Device> findAllByOrganizationIdOrderByCreatedAtDesc(UUID organizationId, Pageable pageable);
 }

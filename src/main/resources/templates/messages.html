@@ -1,28 +1,33 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
-<head th:replace="~{fragments :: head('Messages')}"></head>
+<head th:replace="~{fragments :: head(#{gw.messages.title})}"></head>
 <body>
 <header th:replace="~{fragments :: nav('messages')}"></header>
 <main>
-    <h1>Messages</h1>
+    <h1 th:text="#{gw.messages.title}">Messages</h1>
 
     <form th:action="@{/messages}" method="get" class="filters">
-        <label>Status
+        <label><span th:text="#{gw.messages.filter.status}">Status</span>
             <select name="status">
-                <option value="">All</option>
-                <option th:each="s : ${statuses}" th:value="${s}" th:text="${s}" th:selected="${s == status}">QUEUED</option>
+                <option value="" th:text="#{gw.messages.filter.all}">All</option>
+                <option th:each="s : ${statuses}" th:value="${s}" th:text="#{'gw.status.' + ${s}}" th:selected="${s == status}">Queued</option>
             </select>
         </label>
-        <label>Recipient <input type="search" name="recipient" th:value="${recipient}" placeholder="+243…"></label>
-        <button type="submit">Filter</button>
+        <label><span th:text="#{gw.messages.filter.recipient}">Recipient</span>
+            <input type="search" name="recipient" th:value="${recipient}" placeholder="+243…"></label>
+        <button type="submit" th:text="#{gw.messages.filter.submit}">Filter</button>
     </form>
 
+    <div class="table-wrap">
     <table>
         <thead>
-        <tr><th>Created</th><th>Recipient</th><th>Status</th><th>Client</th><th>Device</th><th class="num">Attempts</th><th>Reason</th></tr>
+        <tr><th th:text="#{gw.col.created}">Created</th><th th:text="#{gw.col.recipient}">Recipient</th><th th:text="#{gw.col.status}">Status</th>
+            <th th:text="#{gw.col.client}">Client</th><th th:text="#{gw.col.device}">Device</th><th class="num" th:text="#{gw.col.attempts}">Attempts</th>
+            <th th:text="#{gw.col.reason}">Reason</th></tr>
         </thead>
         <tbody>
-        <tr th:if="${page.empty}" class="empty-row"><td colspan="7">No message yet. They appear here as soon as your application queues one.</td></tr>
+        <tr th:if="${page.empty}" class="empty-row"><td colspan="7"
+            th:text="${status != null or !#strings.isEmpty(recipient)} ? #{gw.messages.empty.filtered} : #{gw.messages.empty}">No message yet.</td></tr>
         <tr th:each="m : ${page.content}">
             <td><a th:href="@{/messages/{id}(id=${m.id})}" th:text="${@fmt.dateTime(m.createdAt)}">2026-01-01</a></td>
             <td class="mono" th:text="${m.recipient}">+243…</td>
@@ -34,17 +39,9 @@
         </tr>
         </tbody>
     </table>
+    </div>
 
-    <nav class="pager" aria-label="Pages">
-        <a th:if="${page.hasPrevious()}" class="pager-link"
-           th:href="@{/messages(status=${status}, recipient=${recipient}, page=${page.number - 1})}">← Newer</a>
-        <span th:unless="${page.hasPrevious()}" class="pager-link disabled" aria-disabled="true">← Newer</span>
-        <span class="pager-info" th:text="'Page ' + ${page.number + 1} + ' of ' + ${page.totalPages > 0 ? page.totalPages : 1}
-            + ' · ' + ${page.totalElements} + ' messages'">Page 1 of 1</span>
-        <a th:if="${page.hasNext()}" class="pager-link"
-           th:href="@{/messages(status=${status}, recipient=${recipient}, page=${page.number + 1})}">Older →</a>
-        <span th:unless="${page.hasNext()}" class="pager-link disabled" aria-disabled="true">Older →</span>
-    </nav>
+    <nav th:replace="~{pagination :: pager(${page}, @{/messages(status=${status}, recipient=${recipient})}, 'gw.pager.messages')}"></nav>
 </main>
 </body>
 </html>
