@@ -15,10 +15,10 @@
         <button type="submit">Create key</button>
     </form>
 
-    <p th:if="${#lists.isEmpty(apiKeys)}" class="muted">No API key yet.</p>
-    <table th:unless="${#lists.isEmpty(apiKeys)}">
+    <table>
         <thead><tr><th>Name</th><th>Key</th><th>State</th><th>Created</th><th>Last used</th><th></th></tr></thead>
         <tbody>
+        <tr th:if="${#lists.isEmpty(apiKeys)}" class="empty-row"><td colspan="6">No API key yet. Create one above for your application.</td></tr>
         <tr th:each="k : ${apiKeys}">
             <td th:text="${k.name}">app</td>
             <td class="mono small" th:text="${k.keyPrefix} + '…'">usg_…</td>

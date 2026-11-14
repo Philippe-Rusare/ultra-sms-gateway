@@ -17,12 +17,12 @@
         <button type="submit">Filter</button>
     </form>
 
-    <p th:if="${page.empty}" class="muted">No message.</p>
-    <table th:unless="${page.empty}">
+    <table>
         <thead>
         <tr><th>Created</th><th>Recipient</th><th>Status</th><th>Client</th><th>Device</th><th class="num">Attempts</th><th>Reason</th></tr>
         </thead>
         <tbody>
+        <tr th:if="${page.empty}" class="empty-row"><td colspan="7">No message yet. They appear here as soon as your application queues one.</td></tr>
         <tr th:each="m : ${page.content}">
             <td><a th:href="@{/messages/{id}(id=${m.id})}" th:text="${@fmt.dateTime(m.createdAt)}">2026-01-01</a></td>
             <td class="mono" th:text="${m.recipient}">+243…</td>
@@ -35,12 +35,15 @@
         </tbody>
     </table>
 
-    <nav class="pager" th:if="${page.totalPages > 1}">
-        <a th:if="${page.hasPrevious()}"
+    <nav class="pager" aria-label="Pages">
+        <a th:if="${page.hasPrevious()}" class="pager-link"
            th:href="@{/messages(status=${status}, recipient=${recipient}, page=${page.number - 1})}">← Newer</a>
-        <span th:text="'Page ' + ${page.number + 1} + ' of ' + ${page.totalPages}">Page 1 of 1</span>
-        <a th:if="${page.hasNext()}"
+        <span th:unless="${page.hasPrevious()}" class="pager-link disabled" aria-disabled="true">← Newer</span>
+        <span class="pager-info" th:text="'Page ' + ${page.number + 1} + ' of ' + ${page.totalPages > 0 ? page.totalPages : 1}
+            + ' · ' + ${page.totalElements} + ' messages'">Page 1 of 1</span>
+        <a th:if="${page.hasNext()}" class="pager-link"
            th:href="@{/messages(status=${status}, recipient=${recipient}, page=${page.number + 1})}">Older →</a>
+        <span th:unless="${page.hasNext()}" class="pager-link disabled" aria-disabled="true">Older →</span>
     </nav>
 </main>
 </body>

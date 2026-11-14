@@ -192,3 +192,13 @@ button.secondary { background: none; color: var(--accent); border: 1px solid var
 .pairing ol { margin: 0 0 16px; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; line-height: 1.5; }
 .pairing-link { word-break: break-all; user-select: all; font-size: 0.8rem; }
 @media (max-width: 760px) { .pairing { grid-template-columns: 1fr; } }
+
+/* ---- Empty states: the component stays in place, with a line that says why it is empty ---- */
+.empty-row td { text-align: center; color: var(--muted); padding: 28px 12px; white-space: normal; }
+.chart-empty-note { position: absolute; inset: 0 0 28px 40px; display: grid; place-items: center; margin: 0; text-align: center;
+    color: var(--muted); font-size: 0.9rem; pointer-events: none; }
+.pager { align-items: center; }
+.pager-link { padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); }
+.pager-link:hover { text-decoration: none; border-color: var(--accent); color: var(--accent); }
+.pager-link.disabled { color: var(--muted); opacity: 0.55; pointer-events: none; }
+.pager-info { font-variant-numeric: tabular-nums; }

@@ -21,13 +21,13 @@
                 title="Shows a token to type in the app, for a phone that cannot scan">Create a token instead</button>
     </form>
 
-    <p th:if="${#lists.isEmpty(devices)}" class="muted">No device yet.</p>
-    <table th:unless="${#lists.isEmpty(devices)}">
+    <table>
         <thead>
         <tr><th>Name</th><th>Token</th><th>State</th><th>Operator</th><th>Network</th><th class="num">Signal</th>
             <th class="num">Battery</th><th>App</th><th>Last seen</th><th></th></tr>
         </thead>
         <tbody>
+        <tr th:if="${#lists.isEmpty(devices)}" class="empty-row"><td colspan="10">No device yet. Add one above, then scan its QR code with the app.</td></tr>
         <tr th:each="view : ${devices}" th:with="d=${view.device}">
             <td th:text="${d.name}">Phone</td>
             <td class="mono small" th:text="${d.tokenPrefix} + '…'">usgd_…</td>

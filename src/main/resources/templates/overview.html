@@ -31,15 +31,15 @@
     <section class="panel chart-panel">
         <div class="chart-head">
             <h2>Messages by outcome, last 14 days</h2>
-            <ul class="legend" th:if="${chart.total > 0}">
+            <ul class="legend">
                 <li th:each="s : ${chartSeries}">
                     <span class="swatch" th:classappend="'series-' + ${s.cssClass()}"></span>
                     <span th:text="${s.label()}">Delivered</span>
                 </li>
             </ul>
         </div>
-        <p th:if="${chart.total == 0}" class="muted chart-empty">No finished message in the last 14 days.</p>
-        <div class="chart-wrap" th:if="${chart.total > 0}">
+        <div class="chart-wrap">
+            <p th:if="${chart.total == 0}" class="chart-empty-note">No finished message in the last 14 days. The chart fills in as messages are sent.</p>
             <svg class="chart" th:attr="viewBox='0 0 ' + ${chart.width} + ' ' + ${chart.height}" role="img"
                  aria-label="Stacked columns of messages per day over the last 14 days, by outcome. Exact figures by status are in the table below.">
                 <g class="chart-grid">
@@ -78,12 +78,10 @@
     </table>
 
     <h2>Devices</h2>
-    <p th:if="${#lists.isEmpty(devices)}" class="muted">
-        No device yet. <a th:href="@{/devices}">Add one</a>, then enter its token in the Android app.
-    </p>
-    <table th:unless="${#lists.isEmpty(devices)}">
+    <table>
         <thead><tr><th>Name</th><th>State</th><th>Operator</th><th class="num">Battery</th><th>Last seen</th></tr></thead>
         <tbody>
+        <tr th:if="${#lists.isEmpty(devices)}" class="empty-row"><td colspan="5">No device yet. <a th:href="@{/devices}">Add one</a> and scan its QR code with the app.</td></tr>
         <tr th:each="view : ${devices}" th:with="d=${view.device}">
             <td th:text="${d.name}">Phone</td>
             <td>
