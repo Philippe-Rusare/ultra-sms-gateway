@@ -5,6 +5,7 @@
 <header th:replace="~{fragments :: nav('overview')}"></header>
 <main>
     <h1 th:text="#{gw.overview.title}">Overview</h1>
+    <th:block th:replace="~{extensions :: page-top}"></th:block>
     <th:block th:replace="~{extensions :: overview-top}"></th:block>
 
     <section class="tiles">

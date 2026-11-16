@@ -10,3 +10,6 @@ gateway:
   dispatch:
     # Tests run maintenance by hand with a controllable clock.
     interval: 1h
+  webhooks:
+    # Tests send webhooks by hand with a controllable clock.
+    interval: 1h

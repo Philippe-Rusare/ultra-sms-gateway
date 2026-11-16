@@ -83,6 +83,71 @@ Not every operator sends delivery reports: `SENT` may be the last status you get
 | `MAX_ATTEMPTS_REACHED` | Phones were given the message `GATEWAY_MAX_ATTEMPTS` times without acknowledging it. |
 | `REPORT_TIMEOUT` | A phone acknowledged it but never said whether it was sent. |
 
+## Webhooks
+
+Instead of asking for the status of a message, your application can be told: add an endpoint in the dashboard
+(**Webhooks**), choose its events, and the gateway sends a `POST` to it at each status change.
+
+| Event | Sent when the message becomes |
+|---|---|
+| `message.sent` | `SENT` |
+| `message.delivered` | `DELIVERED` |
+| `message.failed` | `FAILED` |
+| `message.expired` | `EXPIRED` |
+| `webhook.test` | (never: sent from the dashboard to check an endpoint) |
+
+```http
+POST /your/webhook HTTP/1.1
+Content-Type: application/json
+Usg-Event: message.delivered
+Usg-Delivery: 1246d23a-7621-48ea-9421-f895ca089bbe
+Usg-Signature: t=1731600000,v1=5f3c9a…
+
+{
+  "id": "1246d23a-7621-48ea-9421-f895ca089bbe",
+  "type": "message.delivered",
+  "createdAt": "2026-11-14T10:34:20Z",
+  "data": {
+    "messageId": "0f81ef6c-ee45-4176-a50b-f8753e9d3f37",
+    "clientReference": "order-42",
+    "to": "+243812345678",
+    "status": "DELIVERED",
+    "attempts": 1,
+    "failureReason": null,
+    "createdAt": "2026-11-14T10:33:56Z",
+    "sentAt": "2026-11-14T10:34:00Z",
+    "deliveredAt": "2026-11-14T10:34:20Z"
+  }
+}
+```
+
+The message text is never sent. `id` is the same on every attempt of one request: use it to ignore a request you
+already handled.
+
+**Check the signature.** Each endpoint has a secret (`whsec_…`), shown once when it is created or renewed.
+`Usg-Signature` holds `t`, the time of sending in Unix seconds, and `v1`, the hexadecimal HMAC-SHA256 of
+`<t>.<raw body>` with the secret. Recompute it on the raw body, compare in constant time, and refuse a request whose
+`t` is more than 5 minutes away from your clock.
+
+```python
+import hashlib, hmac, time
+
+def verify(secret: str, header: str, body: bytes) -> bool:
+    parts = dict(item.split("=", 1) for item in header.split(","))
+    expected = hmac.new(secret.encode(), parts["t"].encode() + b"." + body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(expected, parts["v1"]) and abs(time.time() - int(parts["t"])) < 300
+```
+
+**Answer quickly.** Answer `2xx` within 10 seconds (`GATEWAY_WEBHOOK_TIMEOUT`), then do the work. Any other answer,
+a timeout or a redirect counts as a failure: the request is sent again after 30 s, 2 min, 10 min, 30 min, 1 h, 3 h,
+then every 6 h, up to 8 attempts (`GATEWAY_WEBHOOK_MAX_ATTEMPTS`). Requests may arrive out of order: rely on the
+`status` and the times, not on the order. The dashboard shows each request, its answer, and can send it again.
+
+**Addresses.** A self-hosted gateway may call addresses of its own network. With
+`GATEWAY_WEBHOOK_ALLOW_PRIVATE_NETWORKS=false` it refuses `localhost`, `10.x`, `172.16–31.x`, `192.168.x`,
+link-local and similar addresses, checked again before every request; `GATEWAY_WEBHOOK_REQUIRE_HTTPS=true` requires
+`https://`. A public service sets both.
+
 ## Errors
 
 Errors are [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem documents

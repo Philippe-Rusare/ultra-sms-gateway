@@ -6,6 +6,7 @@
 <main>
     <p><a th:href="@{/messages}" th:text="#{gw.message.back}">← Messages</a></p>
     <h1><span th:text="#{gw.message.title}">Message</span> <span class="mono small" th:text="${message.id}">id</span></h1>
+    <th:block th:replace="~{extensions :: page-top}"></th:block>
 
     <dl class="details">
         <dt th:text="#{gw.col.status}">Status</dt><dd><span th:replace="~{fragments :: status(${message.status.name()})}"></span></dd>

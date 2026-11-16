@@ -12,6 +12,7 @@ import com.ultracoresoft.ultrasmsgateway.common.InvalidRequestException;
 import com.ultracoresoft.ultrasmsgateway.common.NotFoundException;
 import com.ultracoresoft.ultrasmsgateway.apikey.ApiKeyPrincipal;
 import com.ultracoresoft.ultrasmsgateway.config.GatewayProperties;
+import com.ultracoresoft.ultrasmsgateway.webhook.WebhookService;
 import com.ultracoresoft.ultrasmsgateway.device.Device;
 import com.ultracoresoft.ultrasmsgateway.device.DeviceRepository;
 import java.time.Clock;
@@ -39,6 +40,7 @@ public class MessageService {
 
     private static final Set<MessageStatus> IN_FLIGHT = EnumSet.of(DISPATCHED, ACCEPTED);
     private static final Set<MessageStatus> WAITING = EnumSet.of(QUEUED, DISPATCHED);
+    private static final Set<MessageStatus> REPORTED_BY_WEBHOOK = EnumSet.of(SENT, DELIVERED, FAILED, EXPIRED);
     private static final int MAX_REPORT_ATTEMPTS = 3;
     private static final int MAX_REASON_LENGTH = 200;
 
@@ -48,15 +50,17 @@ public class MessageService {
     private final GatewayProperties properties;
     private final Clock clock;
     private final TransactionTemplate transaction;
+    private final WebhookService webhooks;
 
     public MessageService(SmsMessageRepository messages, MessageEventRepository events, DeviceRepository devices,
-                          GatewayProperties properties, Clock clock, TransactionTemplate transaction) {
+                          GatewayProperties properties, Clock clock, TransactionTemplate transaction, WebhookService webhooks) {
         this.messages = messages;
         this.events = events;
         this.devices = devices;
         this.properties = properties;
         this.clock = clock;
         this.transaction = transaction;
+        this.webhooks = webhooks;
     }
 
     // ---------------------------------------------------------------- client API
@@ -271,6 +275,10 @@ public class MessageService {
             message.setBody(null);
         }
         events.save(MessageEvent.of(message.getId(), to, deviceId, detail, now));
+        if (REPORTED_BY_WEBHOOK.contains(to)) {
+            // Same transaction: the webhook request is recorded if and only if the status change is.
+            webhooks.onStatusChange(message, to, now);
+        }
     }
 
     private static String blankToNull(String value) {

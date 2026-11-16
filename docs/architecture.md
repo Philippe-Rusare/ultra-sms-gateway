@@ -9,6 +9,7 @@
 | `message` | The queue: `SmsMessage` entity, state machine (`MessageService`), dispatch loop (`MessageDispatcher`). |
 | `device` | Phones: tokens, WebSocket handler, live session registry, frames. |
 | `organization` | Owner of keys, devices and messages; `OrganizationContext` tells the dashboard which one is current. |
+| `webhook` | Webhook endpoints, the outbox of their requests (`WebhookService`) and the signed sender with retries (`WebhookSender`). |
 | `dashboard` | Server-rendered administration pages (Thymeleaf). |
 | `config` | Settings (`GatewayProperties`), security zones, WebSocket and OpenAPI setup. |
 
@@ -65,7 +66,7 @@ Extension points:
 |---|---|
 | `OrganizationContext` | Provides a `@Primary` bean that returns the organization of the signed-in user. |
 | `gateway.dashboard.login=external` | Switches off the built-in administrator (`BuiltinDashboardSecurity`) and declares its own `SecurityFilterChain` for the dashboard, ordered after the API and device chains, with its own users. Without that chain the dashboard would be unprotected. |
-| `templates/extensions.html` | Provides its own file with the fragments `nav-links(active)`, `nav-account`, `head-extra` and `overview-top`, to add pages to the menu, show the signed-in account, load a stylesheet and add content at the top of the Overview page. All four fragments must be present. |
+| `templates/extensions.html` | Provides its own file with the fragments `nav-links(active)`, `nav-account`, `head-extra`, `page-top` and `overview-top`, to add pages to the menu, show the signed-in account, load a stylesheet, add content under the title of every page, and at the top of the Overview page. All five fragments must be present. |
 | `templates/login.html` | Provides its own sign-in page, posting `username` and `password` to `/login`. |
 | `templates/fragments.html` | Provides its own layout (fragments `head(title)`, `nav(active)`, `status(value)`, `issued(label)`, `error`), to replace the top bar entirely. |
 | `i18n/gateway*.properties` | The texts of the pages, in English (`gateway.properties`) and French (`gateway_fr.properties`). An embedding application adds `i18n/gateway` to `spring.messages.basename` and chooses the language with its own `LocaleResolver`. |
@@ -79,6 +80,15 @@ Extension points:
   the `X-Modal` header). Without JavaScript the forms still work as plain pages.
 - **Lists.** Messages (50 per page), devices and API keys (20 per page) are paged with the `pagination :: pager`
   fragment. Devices and API keys can be renamed; revoking asks for confirmation.
+
+## Webhooks
+
+A status change to `SENT`, `DELIVERED`, `FAILED` or `EXPIRED` writes one `webhook_delivery` row per endpoint
+listening to it, in the transaction of the change (an outbox): no event is lost if the server stops, and none is
+sent for a change that was rolled back. `WebhookSender` sends the due rows every `GATEWAY_WEBHOOK_INTERVAL`
+(5 s) without holding a transaction during the request, and plans the next attempt on failure. Finished rows are
+deleted after `GATEWAY_WEBHOOK_RETENTION` (7 days). The secret of an endpoint is stored in clear, since the
+gateway needs it to sign.
 
 ## The queue is a table
 

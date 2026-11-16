@@ -150,6 +150,21 @@ class DashboardTest extends IntegrationTest {
     }
 
     @Test
+    void webhookPagesCreateAnEndpointAndShowItsSecretOnce() throws Exception {
+        submit("/webhooks", "/webhooks", "url=" + URLEncoder.encode("https://example.com/hook", StandardCharsets.UTF_8)
+                + "&description=Orders&events=message.delivered&events=message.failed");
+        String list = page("/webhooks");
+        assertThat(list).contains("https://example.com/hook", "message.delivered", "message.failed").doesNotContain("??");
+        Matcher detail = Pattern.compile("href=\"(/webhooks/[0-9a-f-]{36})\"").matcher(list);
+        assertThat(detail.find()).isTrue();
+        assertThat(page(detail.group(1))).contains("Orders", "whsec_", "Send a test event", "Requests");
+        submit(detail.group(1), detail.group(1) + "/test", "x=1");
+        assertThat(page(detail.group(1))).contains("Test event queued", "webhook.test");
+        submit("/webhooks", "/webhooks", "url=ftp%3A%2F%2Fbad&events=message.sent");
+        assertThat(page("/webhooks")).contains("Enter a complete address");
+    }
+
+    @Test
     void pagesFollowTheLanguageOfTheBrowser() throws Exception {
         String french = browser.send(HttpRequest.newBuilder(url("/devices")).header("Accept-Language", "fr-FR,fr;q=0.9").GET().build(),
                 HttpResponse.BodyHandlers.ofString()).body();

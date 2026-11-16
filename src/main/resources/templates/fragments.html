@@ -19,6 +19,7 @@
         <a th:href="@{/messages}" th:classappend="${active == 'messages'} ? 'active'" th:text="#{gw.nav.messages}">Messages</a>
         <a th:href="@{/devices}" th:classappend="${active == 'devices'} ? 'active'" th:text="#{gw.nav.devices}">Devices</a>
         <a th:href="@{/api-keys}" th:classappend="${active == 'api-keys'} ? 'active'" th:text="#{gw.nav.apikeys}">API keys</a>
+        <a th:href="@{/webhooks}" th:classappend="${active == 'webhooks'} ? 'active'" th:text="#{gw.nav.webhooks}">Webhooks</a>
         <a th:href="@{/swagger-ui.html}" th:text="#{gw.nav.docs}">API docs</a>
         <th:block th:replace="~{extensions :: nav-links(${active})}"></th:block>
     </nav>

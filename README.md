@@ -58,6 +58,8 @@ The screenshots use the fictitious data of the [demo profile](#try-it-without-a-
 - One API key per client application, one token per phone, both revocable from the dashboard.
 - Audit trail: every status change of every message, with the phone that handled it.
 - Phone health in the dashboard: online state, battery, signal, operator.
+- Signed webhooks for sent, delivered, failed and expired messages, retried for a day, with their history in the dashboard.
+- Dashboard in English and French.
 - OpenAPI documentation at `/swagger-ui.html`.
 
 ## Quick start
@@ -123,6 +125,10 @@ All settings are environment variables (see [`application.yaml`](src/main/resour
 | `GATEWAY_MAX_ATTEMPTS` | `5` | Dispatch attempts before a message fails |
 | `GATEWAY_DISPATCH_INTERVAL` | `2s` | Period of the maintenance and dispatch loop |
 | `GATEWAY_TIME_ZONE` | `UTC` | Time zone of the dashboard, e.g. `Africa/Kinshasa` |
+| `GATEWAY_WEBHOOK_TIMEOUT` | `10s` | Time a webhook endpoint has to answer |
+| `GATEWAY_WEBHOOK_MAX_ATTEMPTS` | `8` | Attempts before a webhook request is given up |
+| `GATEWAY_WEBHOOK_ALLOW_PRIVATE_NETWORKS` | `true` | Whether webhooks may go to addresses of the local network |
+| `GATEWAY_WEBHOOK_REQUIRE_HTTPS` | `false` | Whether webhook addresses must use HTTPS |
 | `PORT` | `8080` | HTTP port |
 
 ## Documentation
@@ -165,7 +171,7 @@ the in-memory H2 database and must never be exposed to others.
 
 1. **Server v1** (this repository): API, queue, WebSocket channel, dashboard. ✅
 2. **[Android app](https://github.com/Philippe-Rusare/ultra-sms-gateway-android)**: configuration screen, foreground service, sending with `SmsManager`, reports. ✅
-3. Routing by operator prefix across several phones; fallback to a commercial SMS provider; webhooks.
+3. Webhooks. ✅ Routing by operator prefix across several phones; fallback to a commercial SMS provider.
 4. Several gateway instances (shared session registry), metrics.
 
 ## Responsible use

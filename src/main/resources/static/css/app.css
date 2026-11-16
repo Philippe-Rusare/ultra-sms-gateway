@@ -258,3 +258,24 @@ body.is-busy { cursor: progress; }
 .table-wrap th.actions, .table-wrap td.actions { position: sticky; right: 0; box-shadow: -10px 0 12px -12px rgba(16, 24, 48, .35); }
 .table-wrap td.actions { background: var(--surface); }
 .table-wrap th.actions { background: inherit; }
+
+/* ---- Webhooks ---- */
+.event-badge { background: var(--idle-bg); color: var(--idle); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 500; margin: 1px 4px 1px 0; }
+.head-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; }
+.head-actions form { margin: 0; }
+form.inline { display: inline; margin-left: 10px; }
+.details dd form.inline button { font-size: 0.85rem; color: var(--accent); }
+.payload summary { cursor: pointer; color: var(--accent); font-size: 0.85rem; }
+.payload pre { margin: 8px 0 0; max-width: 520px; white-space: pre-wrap; word-break: break-all; font-size: 0.78rem;
+    background: var(--bg); border-radius: 8px; padding: 10px; }
+.code-block { margin: 8px 0 0; padding: 12px 14px; border-radius: 8px; background: #0b1020; color: #dbe3ff; font-size: 0.82rem; overflow-x: auto; }
+.webhook-help h2, .danger-zone h2 { margin: 0 0 6px; font-size: 1rem; }
+.webhook-help p, .danger-zone p { margin: 0; }
+.danger-zone { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+    border-color: color-mix(in srgb, var(--danger) 35%, var(--border)); margin-top: 24px; }
+.checks { border: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.checks legend { padding: 0; margin-bottom: 6px; font-weight: 600; font-size: 0.88rem; color: var(--text); }
+.checks label, .check-line { display: flex !important; flex-direction: row !important; align-items: center; gap: 10px; font-weight: 400 !important; cursor: pointer; }
+.checks input, .check-line input { width: auto !important; accent-color: var(--accent); }
+a.button-secondary { display: inline-block; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; color: var(--accent); font-size: 0.85rem; }
+a.button-secondary:hover { text-decoration: none; border-color: var(--accent); }

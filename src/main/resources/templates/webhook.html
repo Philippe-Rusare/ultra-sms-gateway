@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments :: head(#{gw.webhooks.title})}"></head>
+<body>
+<header th:replace="~{fragments :: nav('webhooks')}"></header>
+<main>
+    <p><a th:href="@{/webhooks}" th:text="#{gw.webhooks.back}">← Webhooks</a></p>
+    <div class="page-head">
+        <div>
+            <h1 th:text="${endpoint.description} ?: #{gw.webhooks.endpoint}">Endpoint</h1>
+            <p class="mono small muted" th:text="${endpoint.url}">https://…</p>
+        </div>
+        <div class="head-actions">
+            <form th:action="@{/webhooks/{id}/test(id=${endpoint.id})}" method="post">
+                <button type="submit" class="secondary" th:text="#{gw.webhooks.test}">Send a test event</button>
+            </form>
+            <button type="button" data-dialog="edit-webhook" th:text="#{gw.webhooks.edit}">Edit</button>
+        </div>
+    </div>
+    <th:block th:replace="~{extensions :: page-top}"></th:block>
+
+    <th:block th:replace="~{fragments :: error}"></th:block>
+    <div th:replace="~{fragments :: issued('gw.issued.webhook')}"></div>
+
+    <dl class="details">
+        <dt th:text="#{gw.col.state}">State</dt>
+        <dd>
+            <span th:if="${endpoint.active}" class="badge status-delivered" th:text="#{gw.state.active}">Active</span>
+            <span th:unless="${endpoint.active}" class="badge status-expired" th:text="#{gw.webhooks.paused}">Paused</span>
+        </dd>
+        <dt th:text="#{gw.webhooks.col.events}">Events</dt>
+        <dd><span th:each="e : ${endpoint.eventList()}" class="badge event-badge" th:text="${e.type()}">message.sent</span></dd>
+        <dt th:text="#{gw.webhooks.secret}">Signing secret</dt>
+        <dd>
+            <code th:text="${endpoint.secretPrefix()} + '…'">whsec_…</code>
+            <form class="inline" th:action="@{/webhooks/{id}/secret(id=${endpoint.id})}" method="post"
+                  th:data-confirm="#{gw.webhooks.rotate.text}" th:data-confirm-title="#{gw.webhooks.rotate.title}"
+                  th:data-confirm-ok="#{gw.webhooks.rotate}" th:data-confirm-cancel="#{gw.confirm.cancel}">
+                <button type="submit" class="link" th:text="#{gw.webhooks.rotate}">Generate a new secret</button>
+            </form>
+        </dd>
+        <dt th:text="#{gw.col.created}">Created</dt><dd th:text="${@fmt.dateTime(endpoint.createdAt)}">—</dd>
+        <dt th:text="#{gw.webhooks.col.success}">Last success</dt><dd th:text="${@fmt.dateTime(endpoint.lastSuccessAt)}">—</dd>
+        <dt th:text="#{gw.webhooks.col.failure}">Last failure</dt><dd th:text="${@fmt.dateTime(endpoint.lastFailureAt)}">—</dd>
+    </dl>
+
+    <h2 th:text="#{gw.webhooks.history}">Requests</h2>
+    <div class="table-wrap">
+    <table>
+        <thead><tr><th th:text="#{gw.col.time}">Time</th><th th:text="#{gw.webhooks.col.event}">Event</th><th th:text="#{gw.col.status}">Status</th>
+            <th class="num" th:text="#{gw.col.attempts}">Attempts</th><th th:text="#{gw.webhooks.col.answer}">Answer</th>
+            <th th:text="#{gw.webhooks.col.next}">Next attempt</th><th th:text="#{gw.webhooks.col.payload}">Content</th>
+            <th class="actions"><span class="visually-hidden" th:text="#{gw.col.actions}">Actions</span></th></tr></thead>
+        <tbody>
+        <tr th:if="${page.empty}" class="empty-row"><td colspan="8" th:text="#{gw.webhooks.history.empty}">Nothing sent yet.</td></tr>
+        <tr th:each="d : ${page.content}">
+            <td th:text="${@fmt.dateTime(d.createdAt)}">—</td>
+            <td><span class="badge event-badge" th:text="${d.event}">message.sent</span></td>
+            <td><span class="badge" th:classappend="${d.status.name() == 'SUCCEEDED'} ? 'status-delivered' : (${d.status.name() == 'FAILED'} ? 'status-failed' : 'status-dispatched')"
+                      th:text="#{'gw.webhooks.delivery.' + ${d.status}}">Pending</span></td>
+            <td class="num" th:text="${d.attempts}">0</td>
+            <td class="mono small" th:text="${d.lastStatusCode != null} ? ${d.lastStatusCode} : (${d.lastError} ?: '—')">200</td>
+            <td th:text="${@fmt.dateTime(d.nextAttemptAt)}">—</td>
+            <td><details class="payload"><summary th:text="#{gw.webhooks.show}">Show</summary><pre th:text="${d.payload}">{}</pre></details></td>
+            <td class="actions">
+                <form th:unless="${d.status.name() == 'PENDING'}" th:action="@{/webhooks/{id}/deliveries/{d}/retry(id=${endpoint.id},d=${d.id})}" method="post">
+                    <button type="submit" class="secondary small" th:text="#{gw.webhooks.retry}">Send again</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    </div>
+    <nav th:replace="~{pagination :: pager(${page}, @{/webhooks/{id}(id=${endpoint.id})}, 'gw.pager.requests')}"></nav>
+
+    <section class="panel danger-zone">
+        <div>
+            <h2 th:text="#{gw.webhooks.delete.title}">Delete this endpoint?</h2>
+            <p class="muted" th:text="#{gw.webhooks.delete.text}">Its history is deleted too.</p>
+        </div>
+        <form th:action="@{/webhooks/{id}/delete(id=${endpoint.id})}" method="post"
+              th:data-confirm="#{gw.webhooks.delete.text}" th:data-confirm-title="#{gw.webhooks.delete.title}"
+              th:data-confirm-ok="#{gw.webhooks.delete}" th:data-confirm-cancel="#{gw.confirm.cancel}">
+            <button type="submit" class="danger" th:text="#{gw.webhooks.delete}">Delete</button>
+        </form>
+    </section>
+
+    <dialog class="modal" id="edit-webhook" aria-labelledby="edit-webhook-title">
+        <div class="modal-box">
+            <div class="modal-head">
+                <h2 id="edit-webhook-title" th:text="#{gw.webhooks.edit}">Edit</h2>
+                <button type="button" class="link modal-close" data-dialog-close th:aria-label="#{gw.common.close}">×</button>
+            </div>
+            <form th:action="@{/webhooks/{id}(id=${endpoint.id})}" method="post">
+                <div th:replace="~{webhook :: fields(${endpoint})}"></div>
+                <div class="modal-actions">
+                    <button type="button" class="secondary" data-dialog-close th:text="#{gw.common.cancel}">Cancel</button>
+                    <button type="submit" th:text="#{gw.common.save}">Save</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+</main>
+
+<!-- The fields of an endpoint, empty for a new one. -->
+<div th:fragment="fields(w)" class="modal-body stack">
+    <label><span th:text="#{gw.webhooks.col.url}">Address</span>
+        <input type="url" name="url" maxlength="500" placeholder="https://app.example.com/webhooks/sms" required autofocus
+               th:value="${w != null} ? ${w.url}"></label>
+    <label><span th:text="#{gw.webhooks.description}">Description (optional)</span>
+        <input type="text" name="description" maxlength="100" th:placeholder="#{gw.webhooks.description.placeholder}"
+               th:value="${w != null} ? ${w.description}"></label>
+    <fieldset class="checks">
+        <legend th:text="#{gw.webhooks.col.events}">Events</legend>
+        <label th:each="e : ${events}">
+            <input type="checkbox" name="events" th:value="${e.type()}" th:checked="${w == null or w.listensTo(e)}">
+            <span><code th:text="${e.type()}">message.sent</code> <span class="muted" th:text="#{'gw.event.' + ${e.name()}}">Sent</span></span>
+        </label>
+    </fieldset>
+    <label th:if="${w != null}" class="check-line">
+        <input type="checkbox" name="active" value="true" th:checked="${w.active}">
+        <span th:text="#{gw.webhooks.active}">Send requests to this address</span>
+    </label>
+</div>
+</body>
+</html>

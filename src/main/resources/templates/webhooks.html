@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments :: head(#{gw.webhooks.title})}"></head>
+<body>
+<header th:replace="~{fragments :: nav('webhooks')}"></header>
+<main>
+    <div class="page-head">
+        <div>
+            <h1 th:text="#{gw.webhooks.title}">Webhooks</h1>
+            <p class="muted" th:text="#{gw.webhooks.intro}">Your application is told when a message is sent, delivered, failed or expired.</p>
+        </div>
+        <button type="button" data-dialog="create-webhook" th:text="#{gw.webhooks.create}">Add an endpoint</button>
+    </div>
+    <th:block th:replace="~{extensions :: page-top}"></th:block>
+
+    <th:block th:replace="~{fragments :: error}"></th:block>
+
+    <div class="table-wrap">
+    <table>
+        <thead><tr><th th:text="#{gw.webhooks.col.url}">Address</th><th th:text="#{gw.webhooks.col.events}">Events</th>
+            <th th:text="#{gw.col.state}">State</th><th th:text="#{gw.webhooks.col.success}">Last success</th>
+            <th th:text="#{gw.webhooks.col.failure}">Last failure</th>
+            <th class="actions"><span class="visually-hidden" th:text="#{gw.col.actions}">Actions</span></th></tr></thead>
+        <tbody>
+        <tr th:if="${page.empty}" class="empty-row"><td colspan="6" th:text="#{gw.webhooks.empty}">No endpoint yet.</td></tr>
+        <tr th:each="w : ${page.content}">
+            <td>
+                <a class="mono small" th:href="@{/webhooks/{id}(id=${w.id})}" th:text="${w.url}">https://…</a>
+                <div th:if="${w.description}" class="muted small" th:text="${w.description}">Orders</div>
+            </td>
+            <td><span th:each="e : ${w.eventList()}" class="badge event-badge" th:text="${e.type()}">message.sent</span></td>
+            <td>
+                <span th:if="${w.active}" class="badge status-delivered" th:text="#{gw.state.active}">Active</span>
+                <span th:unless="${w.active}" class="badge status-expired" th:text="#{gw.webhooks.paused}">Paused</span>
+            </td>
+            <td th:text="${@fmt.dateTime(w.lastSuccessAt)}">—</td>
+            <td th:text="${@fmt.dateTime(w.lastFailureAt)}">—</td>
+            <td class="actions"><a class="button-secondary small" th:href="@{/webhooks/{id}(id=${w.id})}" th:text="#{gw.webhooks.open}">Open</a></td>
+        </tr>
+        </tbody>
+    </table>
+    </div>
+    <nav th:replace="~{pagination :: pager(${page}, @{/webhooks}, 'gw.pager.webhooks')}"></nav>
+
+    <section class="panel webhook-help">
+        <h2 th:text="#{gw.webhooks.help.title}">Check that a request comes from the gateway</h2>
+        <p class="muted" th:text="#{gw.webhooks.help.text}">Each request carries a signature.</p>
+        <pre class="code-block"><code>Usg-Signature: t=1731600000,v1=5f3c…
+expected = hex(HMAC_SHA256(secret, t + "." + body))</code></pre>
+    </section>
+
+    <dialog class="modal" id="create-webhook" aria-labelledby="create-webhook-title">
+        <div class="modal-box">
+            <div class="modal-head">
+                <h2 id="create-webhook-title" th:text="#{gw.webhooks.create}">Add an endpoint</h2>
+                <button type="button" class="link modal-close" data-dialog-close th:aria-label="#{gw.common.close}">×</button>
+            </div>
+            <form th:action="@{/webhooks}" method="post">
+                <div th:replace="~{webhook :: fields(null)}"></div>
+                <div class="modal-actions">
+                    <button type="button" class="secondary" data-dialog-close th:text="#{gw.common.cancel}">Cancel</button>
+                    <button type="submit" th:text="#{gw.webhooks.create.submit}">Add the endpoint</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+</main>
+</body>
+</html>
