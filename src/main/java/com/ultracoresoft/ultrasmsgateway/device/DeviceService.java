@@ -9,7 +9,10 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import com.ultracoresoft.ultrasmsgateway.organization.Organization;
+import com.ultracoresoft.ultrasmsgateway.organization.OrganizationRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,8 +23,24 @@ public class DeviceService {
     public static final String TOKEN_PREFIX = "usgd_";
 
     private final DeviceRepository repository;
+    private final OrganizationRepository organizations;
+    private final ObjectProvider<DevicePlanSource> plans;
     private final DeviceSessionRegistry sessions;
     private final Clock clock;
+
+    /** What a phone is told about itself when it connects. */
+    public record Profile(String deviceName, String organizationName, String plan) {
+    }
+
+    @Transactional(readOnly = true)
+    public Profile profile(UUID deviceId) {
+        return repository.findById(deviceId)
+                .map(device -> new Profile(
+                        device.getName(),
+                        organizations.findById(device.getOrganizationId()).map(Organization::getName).orElse(null),
+                        plans.stream().findFirst().flatMap(source -> source.plan(device.getOrganizationId())).orElse(null)))
+                .orElse(new Profile(null, null, null));
+    }
 
     @Transactional
     public Issued<Device> create(UUID organizationId, String name) {

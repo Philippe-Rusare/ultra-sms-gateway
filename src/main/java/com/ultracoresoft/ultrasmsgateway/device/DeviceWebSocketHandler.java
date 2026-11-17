@@ -35,7 +35,7 @@ public class DeviceWebSocketHandler extends TextWebSocketHandler {
         DeviceSession session = new DeviceSession(deviceId, webSocketSession, json);
         sessions.register(session);
         devices.markConnected(deviceId);
-        session.send(ServerFrames.hello(deviceId, clock.instant(), properties.dispatch().maxInFlightPerDevice()));
+        session.send(ServerFrames.hello(deviceId, clock.instant(), properties.dispatch().maxInFlightPerDevice(), devices.profile(deviceId)));
         log.info("Device {} connected", deviceId);
         dispatcher.onDeviceConnected(session);
     }

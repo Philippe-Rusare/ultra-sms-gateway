@@ -79,6 +79,17 @@ class DeviceWebSocketTest extends IntegrationTest {
     }
 
     @Test
+    void helloTellsThePhoneItsNameAndOrganization() throws Exception {
+        device = FakeDevice.connect(port, deviceToken);
+        JsonNode hello = device.next();
+        assertThat(hello.path("type").asString()).isEqualTo("hello");
+        assertThat(hello.path("deviceName").asString()).isEqualTo("ws-phone");
+        assertThat(hello.path("organization").asString()).isNotBlank();
+        // No plans on a self-hosted gateway.
+        assertThat(hello.path("plan").isNull()).isTrue();
+    }
+
+    @Test
     void messageQueuedWhileConnectedIsPushedRightAway() throws Exception {
         device = FakeDevice.connect(port, deviceToken);
         assertThat(device.next().path("type").asString()).isEqualTo("hello");

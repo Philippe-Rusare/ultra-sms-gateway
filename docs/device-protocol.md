@@ -60,10 +60,22 @@ the protocol can grow without breaking older apps.
 Sent once, right after the connection opens.
 
 ```json
-{ "type": "hello", "deviceId": "8b1e…", "serverTime": "2026-11-09T10:15:00Z", "maxInFlight": 3 }
+{
+  "type": "hello",
+  "deviceId": "8b1e…",
+  "serverTime": "2026-11-09T10:15:00Z",
+  "maxInFlight": 3,
+  "deviceName": "Vodacom · counter",
+  "organization": "Demo Company",
+  "plan": null
+}
 ```
 
 `maxInFlight` is the number of messages the gateway may push before the device reports on them.
+
+`deviceName` is the name given to the phone in the dashboard, and `organization` the name of the organization
+it belongs to: the app shows them. `plan` is the organization's plan (`free`, `pro`, `business`) on an edition
+that sells plans, and `null` on a self-hosted gateway. Older apps ignore these fields.
 
 ### `send`
 
