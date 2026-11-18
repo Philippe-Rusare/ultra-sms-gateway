@@ -50,6 +50,8 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 class DashboardController {
 
     private static final int PAGE_SIZE = 50;
+    /** Messages of the live activity on the overview. */
+    static final int RECENT_SIZE = 4;
     /** Devices and API keys per page. */
     static final int LIST_PAGE_SIZE = 20;
     private static final int CHART_DAYS = 14;
@@ -87,7 +89,20 @@ class DashboardController {
         model.addAttribute("counts", counts);
         model.addAttribute("total24h", counts.values().stream().mapToLong(Long::longValue).sum());
         model.addAttribute("queuedNow", messages.countByOrganizationIdAndStatus(organizationId, MessageStatus.QUEUED));
-        model.addAttribute("devices", deviceViews());
+        // The counters of the phone app: sent (sent or delivered), waiting, failed (failed or expired).
+        model.addAttribute("sent24h", counts.get(MessageStatus.SENT) + counts.get(MessageStatus.DELIVERED));
+        model.addAttribute("waiting", counts.get(MessageStatus.QUEUED) + counts.get(MessageStatus.DISPATCHED) + counts.get(MessageStatus.ACCEPTED));
+        model.addAttribute("failed24h", counts.get(MessageStatus.FAILED) + counts.get(MessageStatus.EXPIRED));
+        List<DeviceView> deviceList = deviceViews();
+        List<DeviceView> activeDevices = deviceList.stream().filter(view -> view.device().isActive()).toList();
+        model.addAttribute("devices", activeDevices);
+        model.addAttribute("onlineCount", activeDevices.stream().filter(DeviceView::online).count());
+        // The last messages, as the live activity of the app.
+        List<SmsMessage> recent = messages.findAll(filter(organizationId, null, ""),
+                PageRequest.of(0, RECENT_SIZE, Sort.by(Sort.Direction.DESC, "createdAt"))).getContent();
+        model.addAttribute("recent", recent);
+        model.addAttribute("lastMessageAt", recent.isEmpty() ? null : recent.get(0).getCreatedAt());
+        model.addAttribute("deviceNames", deviceNames());
 
         LocalDate today = LocalDate.now(clock.withZone(formats.zoneId()));
         Instant chartStart = today.minusDays(CHART_DAYS - 1L).atStartOfDay(formats.zoneId()).toInstant();

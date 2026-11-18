@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<!--
+  The pieces the phone app shows (state badge, battery, signal, SIM, rings), so the dashboard reads the same.
+  In their own file: an edition can replace fragments.html without losing them.
+-->
+<body>
+<!-- The state of a phone: green "Online" with a white tick, or "Offline". -->
+<span th:fragment="state-badge(online)" class="state-badge" th:classappend="${online} ? 'on' : 'off'">
+    <span class="state-dot"><svg viewBox="0 0 24 24" aria-hidden="true"><path th:attr="d=${online} ? 'M5 12l5 5 9-10' : 'M6 6l12 12M18 6L6 18'"/></svg></span>
+    <span th:text="${online} ? #{gw.state.online} : #{gw.state.offline}">Online</span>
+</span>
+
+<!-- The battery of the app: the cell fills with the level, green from 50 %, amber, coral from 20 %; a bolt when charging. -->
+<svg th:fragment="battery(level, charging)" class="vital-icon battery" viewBox="0 0 30 28" width="26" height="24" aria-hidden="true"
+     th:with="pct=${level == null ? null : (level > 100 ? 100 : (level < 0 ? 0 : level))}">
+    <rect class="battery-body" x="1.5" y="7" width="24" height="14" rx="3"/>
+    <path class="battery-body" d="M28 11.5v5"/>
+    <rect th:if="${pct != null}" class="battery-fill" x="4.5" y="10" height="8" rx="1.2"
+          th:attr="width=${pct < 6 ? 1.1 : pct * 0.18}"
+          th:classappend="${pct >= 50} ? 'good' : (${pct > 20} ? 'medium' : 'low')"/>
+    <path th:if="${charging}" class="battery-bolt" d="M14.5 9.5L11.5 14.5H14.7L12.7 19"
+          th:classappend="${pct != null and pct > 45} ? 'on-fill'"/>
+</svg>
+
+<!-- The signal, in four bars. -->
+<svg th:fragment="signal(level)" class="vital-icon signal" viewBox="0 0 28 28" width="24" height="24" aria-hidden="true">
+    <rect th:each="i : ${#numbers.sequence(0, 3)}" width="4.5" rx="1.2"
+          th:attr="x=${2 + i * 7},y=${18 - i * 5},height=${7 + i * 5}" th:classappend="${level != null and i < level} ? 'on'"/>
+</svg>
+
+<!-- The SIM card. -->
+<svg th:fragment="sim" class="vital-icon sim" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+    <path d="M7 2h8l5 5v14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zM9 12h6v6H9z"/>
+</svg>
+
+<!-- The rings of the brand, behind the blue band. -->
+<svg th:fragment="rings" class="hero-rings" viewBox="0 0 2400 2400" aria-hidden="true">
+    <circle cx="1200" cy="1200" r="70" class="core"/>
+    <circle cx="1200" cy="1200" r="158" style="stroke-width: 44px; opacity: .085"/>
+    <circle cx="1200" cy="1200" r="256" style="stroke-width: 50px; opacity: .07"/>
+    <circle cx="1200" cy="1200" r="366" style="stroke-width: 58px; opacity: .055"/>
+    <circle cx="1200" cy="1200" r="492" style="stroke-width: 68px; opacity: .042"/>
+    <circle cx="1200" cy="1200" r="638" style="stroke-width: 80px; opacity: .031"/>
+    <circle cx="1200" cy="1200" r="808" style="stroke-width: 94px; opacity: .022"/>
+    <circle cx="1200" cy="1200" r="1004" style="stroke-width: 110px; opacity: .014"/>
+    <circle cx="1200" cy="1200" r="1004" class="wave"/>
+</svg>
+
+</body>
+</html>

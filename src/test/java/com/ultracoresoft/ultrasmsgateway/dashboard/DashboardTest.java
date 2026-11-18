@@ -61,11 +61,13 @@ class DashboardTest extends IntegrationTest {
 
     @Test
     void everyPageRenders() throws Exception {
-        assertThat(page("/")).contains("Waiting in queue", "dashboard-phone", "Messages by outcome", "series-sent", "100 %");
+        // The overview reads as the phone app: the state band, the counters, the live activity (numbers masked), the phones.
+        assertThat(page("/")).contains("No phone online", "Phones online", "Live activity", "+243 81 ••• 5678",
+                "dashboard-phone", "Messages by outcome", "series-sent", "state-badge");
         assertThat(page("/messages")).contains("+243812345678", "Sent");
         assertThat(page("/messages?status=SENT&recipient=2438")).contains("+243812345678");
         assertThat(page("/messages/" + messageId)).contains("History", "erased after sending", "Dispatched");
-        assertThat(page("/devices")).contains("/v1/device/ws", "dashboard-phone");
+        assertThat(page("/devices")).contains("/v1/device/ws", "dashboard-phone", "device-card", "battery");
         assertThat(page("/api-keys")).contains("dashboard-client");
     }
 
@@ -172,7 +174,7 @@ class DashboardTest extends IntegrationTest {
         assertThat(page("/devices")).contains("Add a device", "Sign out").doesNotContain("??");
         String spanish = browser.send(HttpRequest.newBuilder(url("/")).header("Accept-Language", "es").GET().build(),
                 HttpResponse.BodyHandlers.ofString()).body();
-        assertThat(spanish).contains("Waiting in queue").doesNotContain("??");
+        assertThat(spanish).contains("Live activity").doesNotContain("??");
     }
 
     private void submit(String formPage, String action, String body) throws Exception {

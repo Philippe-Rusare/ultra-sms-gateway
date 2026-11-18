@@ -20,34 +20,32 @@
         <dt th:text="#{gw.devices.server}">Server URL</dt><dd><code th:text="${serverUrl}">ws://localhost:8080/v1/device/ws</code></dd>
     </dl>
 
-    <div class="table-wrap">
-    <table>
-        <thead>
-        <tr><th th:text="#{gw.col.name}">Name</th><th th:text="#{gw.col.token}">Token</th><th th:text="#{gw.col.state}">State</th>
-            <th th:text="#{gw.col.operator}">Operator</th><th th:text="#{gw.col.network}">Network</th><th class="num" th:text="#{gw.col.signal}">Signal</th>
-            <th class="num" th:text="#{gw.col.battery}">Battery</th><th th:text="#{gw.col.app}">App</th><th th:text="#{gw.col.lastseen}">Last seen</th>
-            <th class="actions"><span class="visually-hidden" th:text="#{gw.col.actions}">Actions</span></th></tr>
-        </thead>
-        <tbody>
-        <tr th:if="${page.empty}" class="empty-row"><td colspan="10" th:text="#{gw.devices.empty}">No device yet.</td></tr>
-        <tr th:each="view : ${page.content}" th:with="d=${view.device}">
-            <td th:text="${d.name}">Phone</td>
-            <td class="mono small" th:text="${d.tokenPrefix} + '…'">usgd_…</td>
-            <td>
-                <span th:if="${!d.active}" class="badge status-failed" th:text="#{gw.state.revoked}">Revoked</span>
-                <span th:if="${d.active and view.online}" class="badge status-delivered" th:text="#{gw.state.online}">Online</span>
-                <span th:if="${d.active and !view.online}" class="badge status-expired" th:text="#{gw.state.offline}">Offline</span>
-            </td>
-            <td th:text="${d.operatorName} ?: '—'">—</td>
-            <td th:text="${d.networkType} ?: '—'">—</td>
-            <td class="num" th:text="${d.signalLevel} != null ? ${d.signalLevel} + ' / 4' : '—'">—</td>
-            <td class="num">
-                <span th:text="${d.batteryLevel} != null ? ${d.batteryLevel} + ' %' : '—'">—</span>
-                <span th:if="${d.charging}" th:title="#{gw.devices.charging}">⚡</span>
-            </td>
-            <td th:text="${d.appVersion} ?: '—'">—</td>
-            <td th:text="${@fmt.dateTime(d.lastSeenAt)}">—</td>
-            <td class="actions">
+    <!-- Each phone as the home screen of the app shows it: its state on the blue, then SIM, battery and signal. -->
+    <div class="device-grid">
+        <div th:each="view : ${page.content}" th:with="d=${view.device}" class="device-card"
+             th:classappend="${!d.active} ? 'revoked' : (${!view.online} ? 'offline')">
+            <div class="device-top">
+                <svg th:replace="~{phone-ui :: rings}"></svg>
+                <div class="device-title">
+                    <img th:src="@{/img/logo-inverse.svg}" alt="" width="30" height="30">
+                    <span class="device-name"><strong th:text="${d.name}">Phone</strong>
+                        <span th:text="(${d.appVersion} != null ? #{gw.devices.app(${d.appVersion})} + ' · ' : '') + ${d.tokenPrefix} + '…'">App 0.2.0 · usgd_…</span></span>
+                    <span th:if="${!d.active}" class="badge status-failed" th:text="#{gw.state.revoked}">Revoked</span>
+                    <th:block th:if="${d.active}"><span th:replace="~{phone-ui :: state-badge(${view.online})}"></span></th:block>
+                </div>
+                <p class="device-since" th:text="${view.online} ? #{gw.devices.connected(${@fmt.dateTime(d.lastConnectedAt)})} : (${d.lastSeenAt} != null ? #{gw.devices.seen(${@fmt.dateTime(d.lastSeenAt)})} : #{gw.devices.never})">Connected since …</p>
+                <div class="vitals on-blue">
+                    <span class="vital"><svg th:replace="~{phone-ui :: sim}"></svg>
+                        <span><strong th:text="${d.operatorName} ?: '—'">Vodacom</strong><span th:text="${d.networkType == null} ? #{gw.vital.sim} : (${d.networkType == 'WIFI'} ? 'Wi-Fi' : (${d.networkType == 'CELLULAR'} ? #{gw.network.cellular} : ${d.networkType}))">4G</span></span></span>
+                    <span class="vital"><svg th:replace="~{phone-ui :: battery(${d.batteryLevel}, ${d.charging})}"></svg>
+                        <span><strong th:text="${d.batteryLevel} != null ? ${d.batteryLevel} + ' %' : '—'">87 %</strong>
+                            <span th:text="${d.charging} ? #{gw.vital.charging} : #{gw.vital.unplugged}">Charging</span></span></span>
+                    <span class="vital"><svg th:replace="~{phone-ui :: signal(${view.online} ? ${d.signalLevel} : 0)}"></svg>
+                        <span><strong th:text="${view.online and d.signalLevel != null} ? ${d.signalLevel} + ' / 4' : '—'">3 / 4</strong>
+                            <span th:text="${view.online and d.signalLevel != null} ? #{'gw.vital.signal.' + ${d.signalLevel}} : #{gw.state.offline}">Good</span></span></span>
+                </div>
+            </div>
+            <div class="device-actions">
                 <button type="button" class="secondary small" data-dialog="rename-device"
                         th:data-action="@{/devices/{id}/rename(id=${d.id})}" th:data-set-name="${d.name}"
                         th:text="#{gw.common.rename}">Rename</button>
@@ -56,10 +54,13 @@
                       th:data-confirm-ok="#{gw.devices.revoke}" th:data-confirm-cancel="#{gw.confirm.cancel}">
                     <button type="submit" class="danger small" th:text="#{gw.devices.revoke}">Revoke</button>
                 </form>
-            </td>
-        </tr>
-        </tbody>
-    </table>
+            </div>
+        </div>
+        <button type="button" class="device-add" data-dialog="add-device">
+            <span class="device-add-icon" aria-hidden="true">+</span>
+            <strong th:text="#{gw.devices.add}">Add a device</strong>
+            <span class="muted small" th:text="#{gw.devices.add.hint}">Open the app on the phone and scan the QR code.</span>
+        </button>
     </div>
     <nav th:replace="~{pagination :: pager(${page}, @{/devices}, 'gw.pager.devices')}"></nav>
 

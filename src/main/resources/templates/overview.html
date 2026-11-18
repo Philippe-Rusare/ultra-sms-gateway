@@ -3,104 +3,146 @@
 <head th:replace="~{fragments :: head(#{gw.overview.title})}"></head>
 <body>
 <header th:replace="~{fragments :: nav('overview')}"></header>
-<main>
-    <h1 th:text="#{gw.overview.title}">Overview</h1>
+<main class="overview">
+    <h1 class="visually-hidden" th:text="#{gw.overview.title}">Overview</h1>
     <th:block th:replace="~{extensions :: page-top}"></th:block>
+    <!-- The state of the gateway, in the blue band of the phone app. -->
+    <section class="hero" th:with="total=${#lists.size(devices)}"
+             th:classappend="${total == 0} ? 'hero-empty' : (${onlineCount == 0} ? 'hero-down')">
+        <svg th:replace="~{phone-ui :: rings}"></svg>
+        <div class="hero-text">
+            <div class="hero-title">
+                <span th:text="${total == 0} ? #{gw.hero.none} : (${onlineCount > 0} ? #{gw.hero.ok} : #{gw.hero.down})">Gateway running</span>
+                <th:block th:if="${total > 0}"><span th:replace="~{phone-ui :: state-badge(${onlineCount > 0})}"></span></th:block>
+            </div>
+            <p th:if="${total == 0}" th:text="#{gw.hero.none.text}">Open the app on the phone and scan the QR code.</p>
+            <p th:if="${total > 0}">
+                <span th:text="#{gw.hero.summary(${onlineCount}, ${total})}">2 of 3 phones online</span> ·
+                <span th:text="${lastMessageAt} != null ? #{gw.hero.last(${@fmt.time(lastMessageAt)})} : #{gw.hero.nomsg}">last SMS at 10:34</span>
+            </p>
+        </div>
+        <div class="hero-actions">
+            <a class="hero-button" th:href="@{/devices}">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></svg>
+                <span th:text="#{gw.hero.link}">Link a phone</span></a>
+        </div>
+    </section>
+
     <th:block th:replace="~{extensions :: overview-top}"></th:block>
 
-    <section class="tiles">
-        <div class="tile">
-            <span class="tile-label" th:text="#{gw.overview.queue}">Waiting in queue</span>
-            <span class="tile-value" th:text="${queuedNow}">0</span>
-        </div>
-        <div class="tile">
-            <span class="tile-label" th:text="#{gw.overview.last24h}">Messages, last 24 h</span>
-            <span class="tile-value" th:text="${total24h}">0</span>
-        </div>
-        <div class="tile">
-            <span class="tile-label" th:text="#{gw.overview.success}">Success rate, 7 days</span>
-            <span class="tile-value" th:text="${successRate} != null ? ${successRate} + ' %' : '—'">—</span>
-            <span class="tile-note" th:text="#{gw.overview.success.note}">sent or delivered</span>
-        </div>
-        <div class="tile">
-            <span class="tile-label" th:text="#{gw.overview.online}">Devices online</span>
-            <span class="tile-value"
-                  th:text="${#lists.size(devices.?[online])} + ' / ' + ${#lists.size(devices)}">0 / 0</span>
-        </div>
-    </section>
-
-    <section class="panel chart-panel">
-        <div class="chart-head">
-            <h2 th:text="#{gw.overview.chart}">Messages by outcome, last 14 days</h2>
-            <ul class="legend">
-                <li th:each="s : ${chartSeries}">
-                    <span class="swatch" th:classappend="'series-' + ${s.cssClass()}"></span>
-                    <span th:text="#{'gw.series.' + ${s.cssClass()}}">Delivered</span>
-                </li>
-            </ul>
-        </div>
-        <div class="chart-wrap">
-            <p th:if="${chart.total == 0}" class="chart-empty-note" th:text="#{gw.overview.chart.empty}">No finished message.</p>
-            <svg class="chart" th:attr="viewBox='0 0 ' + ${chart.width} + ' ' + ${chart.height}" role="img" th:aria-label="#{gw.overview.chart.label}">
-                <g class="chart-grid">
-                    <line th:each="t : ${chart.ticks}"
-                          th:attr="x1=${chart.plotLeft()},x2=${chart.plotRight()},y1=${t.y},y2=${t.y}"/>
-                </g>
-                <g class="chart-axis-label">
-                    <text th:each="t : ${chart.ticks}" text-anchor="end" dominant-baseline="middle"
-                          th:attr="x=${chart.plotLeft() - 8},y=${t.y}" th:text="${t.label}">0</text>
-                </g>
-                <g th:each="b : ${chart.bars}" class="chart-bar" tabindex="0"
-                   th:attr="data-date=${b.fullDate},data-delivered=${b.delivered},data-sent=${b.sent},data-failed=${b.failed},data-expired=${b.expired},data-total=${b.total()},data-x=${b.centerX}">
-                    <rect class="chart-hit" th:attr="x=${b.hitX},width=${b.hitWidth},y=0,height=${chart.baseline()}"/>
-                    <path th:each="s : ${b.segments}" th:class="'series-' + ${s.series.cssClass()}" th:attr="d=${s.path}"/>
-                    <text th:if="${b.showLabel}" class="chart-axis-label" text-anchor="middle"
-                          th:attr="x=${b.centerX},y=${chart.baseline() + 18}" th:text="${b.dayLabel}">9 Nov</text>
-                </g>
-            </svg>
-            <div class="chart-tooltip" role="status" hidden th:data-total="#{gw.overview.chart.total}"
-                 th:data-delivered="#{gw.series.delivered}" th:data-sent="#{gw.series.sent}"
-                 th:data-failed="#{gw.series.failed}" th:data-expired="#{gw.series.expired}"></div>
-        </div>
-    </section>
-
-    <h2 th:text="#{gw.overview.bystatus}">Last 24 hours by status</h2>
-    <div class="table-wrap">
-    <table>
-        <thead><tr><th th:text="#{gw.col.status}">Status</th><th class="num" th:text="#{gw.col.messages}">Messages</th></tr></thead>
-        <tbody>
-        <tr th:each="entry : ${counts}">
-            <td>
-                <a th:href="@{/messages(status=${entry.key})}">
-                    <span th:replace="~{fragments :: status(${entry.key.name()})}"></span>
-                </a>
-            </td>
-            <td class="num" th:text="${entry.value}">0</td>
-        </tr>
-        </tbody>
-    </table>
+    <div class="section-head">
+        <h2 class="with-icon"><svg viewBox="0 0 24 24" aria-hidden="true" class="filled"><rect x="3" y="12" width="4.5" height="9" rx="1.5"/><rect x="9.75" y="7" width="4.5" height="14" rx="1.5"/><rect x="16.5" y="3" width="4.5" height="18" rx="1.5"/></svg>
+            <span th:text="#{gw.overview.title}">Overview</span></h2>
+        <span class="pill" th:text="#{gw.overview.period}">Last 24 hours</span>
     </div>
 
-    <h2 th:text="#{gw.overview.devices}">Devices</h2>
-    <div class="table-wrap">
-    <table>
-        <thead><tr><th th:text="#{gw.col.name}">Name</th><th th:text="#{gw.col.state}">State</th><th th:text="#{gw.col.operator}">Operator</th><th class="num" th:text="#{gw.col.battery}">Battery</th><th th:text="#{gw.col.lastseen}">Last seen</th></tr></thead>
-        <tbody>
-        <tr th:if="${#lists.isEmpty(devices)}" class="empty-row"><td colspan="5"><span th:text="#{gw.overview.devices.empty}">No device yet.</span> <a th:href="@{/devices}" th:text="#{gw.overview.devices.add}">Add a device</a></td></tr>
-        <tr th:each="view : ${devices}" th:with="d=${view.device}">
-            <td th:text="${d.name}">Phone</td>
-            <td>
-                <span th:if="${!d.active}" class="badge status-failed" th:text="#{gw.state.revoked}">Revoked</span>
-                <span th:if="${d.active and view.online}" class="badge status-delivered" th:text="#{gw.state.online}">Online</span>
-                <span th:if="${d.active and !view.online}" class="badge status-expired" th:text="#{gw.state.offline}">Offline</span>
-            </td>
-            <td th:text="${d.operatorName} ?: '—'">Vodacom</td>
-            <td class="num" th:text="${d.batteryLevel} != null ? ${d.batteryLevel} + ' %' : '—'">80 %</td>
-            <td th:text="${@fmt.dateTime(d.lastSeenAt)}">—</td>
-        </tr>
-        </tbody>
-    </table>
+    <!-- The counters of the phone app: an icon tile, the value in its colour. -->
+    <section class="kpis">
+        <a class="kpi kpi-sent" th:href="@{/messages}">
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></span>
+            <span><strong th:text="${sent24h}">128</strong><span th:text="#{gw.kpi.sent}">Sent</span></span></a>
+        <a class="kpi kpi-waiting" th:href="@{/messages(status='QUEUED')}">
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2"/></svg></span>
+            <span><strong th:text="${waiting}">0</strong><span th:text="#{gw.kpi.waiting}">Waiting</span></span></a>
+        <a class="kpi kpi-failed" th:href="@{/messages(status='FAILED')}">
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8v5M12 16v.01"/></svg></span>
+            <span><strong th:text="${failed24h}">2</strong><span th:text="#{gw.kpi.failed}">Failed</span></span></a>
+        <a class="kpi kpi-online" th:href="@{/devices}">
+            <span class="kpi-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zM11 18h2"/></svg></span>
+            <span><strong th:text="${onlineCount} + ' / ' + ${#lists.size(devices)}">2 / 3</strong><span th:text="#{gw.kpi.online}">Phones online</span></span></a>
+    </section>
+
+    <div class="overview-row">
+        <section class="panel chart-panel">
+            <div class="chart-head">
+                <h2 th:text="#{gw.overview.chart}">Messages by outcome, last 14 days</h2>
+                <ul class="legend">
+                    <li><span class="swatch swatch-sent"></span><span th:text="#{gw.legend.sent}">Sent and delivered</span></li>
+                    <li><span class="swatch swatch-today"></span><span th:text="#{gw.legend.today}">Today</span></li>
+                    <li><span class="swatch series-failed"></span><span th:text="#{gw.legend.failed}">Failed</span></li>
+                    <li><span class="swatch series-expired"></span><span th:text="#{gw.legend.expired}">Expired</span></li>
+                </ul>
+            </div>
+            <div class="chart-wrap">
+                <p th:if="${chart.total == 0}" class="chart-empty-note" th:text="#{gw.overview.chart.empty}">No finished message.</p>
+                <svg class="chart" th:attr="viewBox='0 0 ' + ${chart.width} + ' ' + ${chart.height}" role="img" th:aria-label="#{gw.overview.chart.label}">
+                    <g class="chart-grid">
+                        <line th:each="t : ${chart.ticks}"
+                              th:attr="x1=${chart.plotLeft()},x2=${chart.plotRight()},y1=${t.y},y2=${t.y}"/>
+                    </g>
+                    <g class="chart-axis-label">
+                        <text th:each="t : ${chart.ticks}" text-anchor="end" dominant-baseline="middle"
+                              th:attr="x=${chart.plotLeft() - 8},y=${t.y}" th:text="${t.label}">0</text>
+                    </g>
+                    <g th:each="b, it : ${chart.bars}" class="chart-bar" tabindex="0" th:classappend="${it.last} ? 'chart-today'"
+                       th:attr="data-date=${b.fullDate},data-delivered=${b.delivered},data-sent=${b.sent},data-failed=${b.failed},data-expired=${b.expired},data-total=${b.total()},data-x=${b.centerX}">
+                        <rect class="chart-hit" th:attr="x=${b.hitX},width=${b.hitWidth},y=0,height=${chart.baseline()}"/>
+                        <path th:each="s : ${b.segments}" th:class="'series-' + ${s.series.cssClass()}" th:attr="d=${s.path}"/>
+                        <text th:if="${b.showLabel}" class="chart-axis-label" text-anchor="middle"
+                              th:attr="x=${b.centerX},y=${chart.baseline() + 18}" th:text="${b.dayLabel}">9 Nov</text>
+                    </g>
+                </svg>
+                <div class="chart-tooltip" role="status" hidden th:data-total="#{gw.overview.chart.total}"
+                     th:data-delivered="#{gw.series.delivered}" th:data-sent="#{gw.series.sent}"
+                     th:data-failed="#{gw.series.failed}" th:data-expired="#{gw.series.expired}"></div>
+            </div>
+        </section>
+
+        <!-- The last messages, as the live activity of the app. -->
+        <section class="panel live">
+            <div class="live-head">
+                <span class="live-dot"></span>
+                <h2 th:text="#{gw.live.title}">Live activity</h2>
+                <a th:href="@{/messages}" th:text="#{gw.live.all}">See all</a>
+            </div>
+            <p th:if="${#lists.isEmpty(recent)}" class="muted small" th:text="#{gw.live.empty}">No message yet.</p>
+            <a th:each="m : ${recent}" class="live-row" th:href="@{/messages/{id}(id=${m.id})}"
+               th:with="kind=${m.status.name() == 'DELIVERED'} ? 'ok' : (${m.status.name() == 'SENT'} ? 'sent' : (${m.status.name() == 'FAILED' or m.status.name() == 'EXPIRED'} ? 'failed' : 'waiting'))">
+                <span class="live-icon" th:classappend="'kind-' + ${kind}">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path th:attr="d=${kind == 'ok'} ? 'M4 12l5 5L20 6' : (${kind == 'sent'} ? 'M4 12h14M13 6l6 6-6 6' : (${kind == 'failed'} ? 'M6 6l12 12M18 6L6 18' : 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2'))"/></svg></span>
+                <span class="live-text">
+                    <strong th:text="${@fmt.masked(m.recipient)}">+243 81 ••• 4567</strong>
+                    <span class="muted" th:text="${m.deviceId} != null ? (${deviceNames[m.deviceId]} ?: '—') : #{gw.status.QUEUED}">Comptoir</span>
+                </span>
+                <span class="live-side">
+                    <span th:replace="~{fragments :: status(${m.status.name()})}"></span>
+                    <span class="muted" th:text="${@fmt.time(m.createdAt)}">10:34</span>
+                </span>
+            </a>
+        </section>
     </div>
+
+    <!-- The phones, as the app shows them. -->
+    <section class="phones-strip">
+        <div class="section-head">
+            <h2 th:text="#{gw.overview.devices}">Phones</h2>
+            <a th:href="@{/devices}" th:text="#{gw.overview.devices.manage}">Manage phones</a>
+        </div>
+        <div th:if="${#lists.isEmpty(devices)}" class="empty-block">
+            <span th:text="#{gw.overview.devices.empty}">No device yet.</span>
+            <a th:href="@{/devices}" th:text="#{gw.overview.devices.add}">Add a device</a>
+        </div>
+        <div class="phone-cards">
+            <div th:each="view : ${devices}" th:with="d=${view.device}" class="phone-card">
+                <div class="phone-card-head">
+                    <span class="phone-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zM11 18h2"/></svg></span>
+                    <span class="phone-name"><strong th:text="${d.name}">Phone</strong>
+                        <span class="muted" th:text="${view.online} ? (${d.networkType == 'WIFI'} ? 'Wi-Fi' : (${d.networkType == 'CELLULAR'} ? #{gw.network.cellular} : ${d.networkType})) : (${d.lastSeenAt} != null ? #{gw.devices.seen(${@fmt.dateTime(d.lastSeenAt)})} : #{gw.devices.never})">4G</span></span>
+                    <span th:replace="~{phone-ui :: state-badge(${view.online})}"></span>
+                </div>
+                <div class="vitals">
+                    <span class="vital"><svg th:replace="~{phone-ui :: sim}"></svg>
+                        <span><strong th:text="${d.operatorName} ?: '—'">Vodacom</strong><span th:text="#{gw.vital.sim}">SIM</span></span></span>
+                    <span class="vital"><svg th:replace="~{phone-ui :: battery(${d.batteryLevel}, ${d.charging})}"></svg>
+                        <span><strong th:text="${d.batteryLevel} != null ? ${d.batteryLevel} + ' %' : '—'">87 %</strong>
+                            <span th:text="${d.charging} ? #{gw.vital.charging} : #{gw.vital.unplugged}">Charging</span></span></span>
+                    <span class="vital"><svg th:replace="~{phone-ui :: signal(${view.online} ? ${d.signalLevel} : 0)}"></svg>
+                        <span><strong th:text="${view.online and d.signalLevel != null} ? ${d.signalLevel} + ' / 4' : '—'">3 / 4</strong>
+                            <span th:text="${view.online and d.signalLevel != null} ? #{'gw.vital.signal.' + ${d.signalLevel}} : #{gw.state.offline}">Good</span></span></span>
+                </div>
+            </div>
+        </div>
+    </section>
     <p class="muted small" th:text="#{gw.overview.zone(${@fmt.zone()})}">Times are shown in UTC.</p>
 </main>
 
