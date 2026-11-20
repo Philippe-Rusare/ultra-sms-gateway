@@ -438,3 +438,10 @@ h2.with-icon svg { width: 18px; height: 18px; fill: var(--accent); }
 .device-add:hover { border-color: var(--accent) !important; }
 .device-add-icon { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-size: 28px; font-weight: 400;
     background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+
+/* ---- Pager: position and rows per page ---- */
+.pager-info { display: flex; justify-content: center; align-items: center; gap: 16px; flex-wrap: wrap; }
+.pager-sizes { display: inline-flex; align-items: center; gap: 6px; }
+.pager-size { padding: 2px 8px; border-radius: 6px; color: var(--text); font-variant-numeric: tabular-nums; }
+.pager-size:hover { text-decoration: none; color: var(--accent); }
+.pager-size.current { background: var(--surface); border: 1px solid var(--border); font-weight: 600; }

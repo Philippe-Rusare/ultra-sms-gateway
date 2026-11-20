@@ -1,5 +1,6 @@
 package com.ultracoresoft.ultrasmsgateway.dashboard;
 
+import com.ultracoresoft.ultrasmsgateway.web.PageSizes;
 import com.ultracoresoft.ultrasmsgateway.apikey.ApiKey;
 import com.ultracoresoft.ultrasmsgateway.apikey.ApiKeyService;
 import com.ultracoresoft.ultrasmsgateway.common.Issued;
@@ -49,11 +50,11 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 @RequiredArgsConstructor
 class DashboardController {
 
-    private static final int PAGE_SIZE = 50;
+    private static final int PAGE_SIZE = PageSizes.DEFAULT;
     /** Messages of the live activity on the overview. */
     static final int RECENT_SIZE = 4;
     /** Devices and API keys per page. */
-    static final int LIST_PAGE_SIZE = 20;
+    static final int LIST_PAGE_SIZE = PageSizes.DEFAULT;
     private static final int CHART_DAYS = 14;
     private static final int MAX_NAME_LENGTH = 100;
     /** Link encoded in the QR code and understood by the Android app. See docs/device-protocol.md. */
@@ -129,10 +130,11 @@ class DashboardController {
     String messageList(@RequestParam(required = false) MessageStatus status,
                        @RequestParam(required = false) String recipient,
                        @RequestParam(defaultValue = "0") int page,
+                       @RequestParam(required = false) Integer size,
                        Model model) {
         String recipientFilter = recipient == null ? "" : recipient.replaceAll("[^0-9+]", "");
         Page<SmsMessage> result = messages.findAll(filter(organization.currentOrganizationId(), status, recipientFilter),
-                PageRequest.of(Math.max(page, 0), PAGE_SIZE, Sort.by(Sort.Direction.DESC, "createdAt")));
+                PageSizes.request(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
         model.addAttribute("page", result);
         model.addAttribute("statuses", MessageStatus.values());
         model.addAttribute("status", status);
@@ -154,9 +156,8 @@ class DashboardController {
     }
 
     @GetMapping("/devices")
-    String deviceList(@RequestParam(defaultValue = "0") int page, Model model) {
-        Page<Device> result = devices.page(organization.currentOrganizationId(),
-                PageRequest.of(Math.max(page, 0), LIST_PAGE_SIZE));
+    String deviceList(@RequestParam(defaultValue = "0") int page, @RequestParam(required = false) Integer size, Model model) {
+        Page<Device> result = devices.page(organization.currentOrganizationId(), PageSizes.request(page, size));
         model.addAttribute("page", result.map(device -> new DeviceView(device, sessions.isOnline(device.getId()))));
         model.addAttribute("serverUrl", ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path("/v1/device/ws").toUriString().replaceFirst("^http", "ws"));
@@ -225,9 +226,9 @@ class DashboardController {
     }
 
     @GetMapping("/api-keys")
-    String apiKeyList(@RequestParam(defaultValue = "0") int page, Model model) {
+    String apiKeyList(@RequestParam(defaultValue = "0") int page, @RequestParam(required = false) Integer size, Model model) {
         model.addAttribute("page", apiKeys.page(organization.currentOrganizationId(),
-                PageRequest.of(Math.max(page, 0), LIST_PAGE_SIZE)));
+                PageSizes.request(page, size)));
         return "api-keys";
     }
 

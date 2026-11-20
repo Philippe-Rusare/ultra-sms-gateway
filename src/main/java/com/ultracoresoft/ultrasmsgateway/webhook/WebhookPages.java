@@ -1,5 +1,6 @@
 package com.ultracoresoft.ultrasmsgateway.webhook;
 
+import com.ultracoresoft.ultrasmsgateway.web.PageSizes;
 import com.ultracoresoft.ultrasmsgateway.common.Issued;
 import com.ultracoresoft.ultrasmsgateway.organization.OrganizationContext;
 import java.util.List;
@@ -22,14 +23,14 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @RequiredArgsConstructor
 class WebhookPages {
 
-    static final int PAGE_SIZE = 20;
+    static final int PAGE_SIZE = PageSizes.DEFAULT;
 
     private final WebhookService webhooks;
     private final OrganizationContext organization;
 
     @GetMapping("/webhooks")
-    String list(@RequestParam(defaultValue = "0") int page, Model model) {
-        model.addAttribute("page", webhooks.page(organization.currentOrganizationId(), PageRequest.of(Math.max(page, 0), PAGE_SIZE)));
+    String list(@RequestParam(defaultValue = "0") int page, @RequestParam(required = false) Integer size, Model model) {
+        model.addAttribute("page", webhooks.page(organization.currentOrganizationId(), PageSizes.request(page, size)));
         model.addAttribute("events", WebhookEvent.SUBSCRIBABLE);
         return "webhooks";
     }
@@ -48,12 +49,12 @@ class WebhookPages {
     }
 
     @GetMapping("/webhooks/{id}")
-    String detail(@PathVariable UUID id, @RequestParam(defaultValue = "0") int page, Model model) {
+    String detail(@PathVariable UUID id, @RequestParam(defaultValue = "0") int page, @RequestParam(required = false) Integer size, Model model) {
         WebhookEndpoint endpoint = webhooks.find(organization.currentOrganizationId(), id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         model.addAttribute("endpoint", endpoint);
         model.addAttribute("events", WebhookEvent.SUBSCRIBABLE);
-        model.addAttribute("page", webhooks.deliveries(id, PageRequest.of(Math.max(page, 0), PAGE_SIZE)));
+        model.addAttribute("page", webhooks.deliveries(id, PageSizes.request(page, size)));
         return "webhook";
     }
 

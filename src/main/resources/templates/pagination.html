@@ -3,6 +3,8 @@
 <!--
     Pagination of a list. `page` is a Spring Data page, `base` the address of the list (it may already hold
     filters) and `totalKey` the message that counts its elements, e.g. gw.pager.devices.
+    It shows where the reader is ("26–50 of 132 messages") and lets them pick 25, 50 or 100 rows per page
+    (?size=, see PageSizes); a size other than the default stays in every link.
 -->
 <body>
 <nav th:fragment="pager(page, base, totalKey)" class="pager" th:aria-label="#{gw.pager.label}"
@@ -10,25 +12,33 @@
               last=${page.totalPages > 0 ? page.totalPages - 1 : 0},
               start=${page.number - 2 < 0 ? 0 : page.number - 2},
               end=${start + 4 > last ? last : start + 4},
-              from=${end - 4 < 0 ? 0 : end - 4}">
-    <a th:if="${page.hasPrevious()}" class="pager-link" th:href="${base + sep + 'page=' + (page.number - 1)}"
+              from=${end - 4 < 0 ? 0 : end - 4},
+              keep=${page.size != 25 ? '&size=' + page.size : ''},
+              first=${page.totalElements == 0 ? 0 : page.number * page.size + 1},
+              upto=${(page.number + 1) * page.size > page.totalElements ? page.totalElements : (page.number + 1) * page.size}">
+    <a th:if="${page.hasPrevious()}" class="pager-link" th:href="${base + sep + 'page=' + (page.number - 1) + keep}"
        th:text="#{gw.pager.previous}" rel="prev">← Previous</a>
     <span th:unless="${page.hasPrevious()}" class="pager-link disabled" aria-disabled="true" th:text="#{gw.pager.previous}">← Previous</span>
 
     <span class="pager-pages">
         <th:block th:each="i : ${#numbers.sequence(from, end)}">
             <span th:if="${i == page.number}" class="pager-number current" aria-current="page" th:text="${i + 1}">1</span>
-            <a th:unless="${i == page.number}" class="pager-number" th:href="${base + sep + 'page=' + i}" th:text="${i + 1}">2</a>
+            <a th:unless="${i == page.number}" class="pager-number" th:href="${base + sep + 'page=' + i + keep}" th:text="${i + 1}">2</a>
         </th:block>
     </span>
 
-    <a th:if="${page.hasNext()}" class="pager-link" th:href="${base + sep + 'page=' + (page.number + 1)}"
+    <a th:if="${page.hasNext()}" class="pager-link" th:href="${base + sep + 'page=' + (page.number + 1) + keep}"
        th:text="#{gw.pager.next}" rel="next">Next →</a>
     <span th:unless="${page.hasNext()}" class="pager-link disabled" aria-disabled="true" th:text="#{gw.pager.next}">Next →</span>
 
     <span class="pager-info">
-        <span th:text="#{gw.pager.info(${page.number + 1}, ${last + 1})}">Page 1 of 1</span> ·
-        <span th:text="#{${totalKey}(${page.totalElements})}">0 items</span>
+        <span th:text="#{gw.pager.range(${first}, ${upto}, ${#messages.msg(totalKey, page.totalElements)})}">1–25 of 132 items</span>
+        <span class="pager-sizes"><span th:text="#{gw.pager.size}">Per page</span>
+            <th:block th:each="n, it : ${ {25, 50, 100} }">
+                <span th:if="${n == page.size}" class="pager-size current" aria-current="true" th:text="${n}">25</span>
+                <a th:unless="${n == page.size}" class="pager-size" th:href="${base + sep + 'page=0&size=' + n}" th:text="${n}">50</a>
+            </th:block>
+        </span>
     </span>
 </nav>
 </body>

@@ -147,8 +147,10 @@ class DashboardTest extends IntegrationTest {
         for (int i = 0; i < DashboardController.LIST_PAGE_SIZE; i++) {
             apiKeys.create(Organization.DEFAULT_ID, "paged-key-" + i);
         }
-        assertThat(page("/api-keys")).contains("Page 1 of", "rel=\"next\"", "?page=1");
-        assertThat(page("/api-keys?page=1")).contains("Page 2 of", "rel=\"prev\"");
+        assertThat(page("/api-keys")).contains("1–25 of", "rel=\"next\"", "?page=1", "Per page", "page=0&amp;size=50");
+        assertThat(page("/api-keys?page=1")).contains("26–", "rel=\"prev\"");
+        assertThat(page("/api-keys?size=50")).contains("1–", "aria-current=\"true\">50</span>", "size=100");
+        assertThat(page("/api-keys?size=1000")).contains("1–25 of");
     }
 
     @Test
