@@ -28,6 +28,7 @@ public class DeviceWebSocketHandler extends TextWebSocketHandler {
     private final GatewayProperties properties;
     private final JsonMapper json;
     private final Clock clock;
+    private final AppVersionPolicy versions;
 
     @Override
     public void afterConnectionEstablished(WebSocketSession webSocketSession) {
@@ -56,7 +57,14 @@ public class DeviceWebSocketHandler extends TextWebSocketHandler {
             return;
         }
         switch (type) {
-            case "heartbeat" -> devices.recordHeartbeat(deviceId, frame);
+            case "heartbeat" -> {
+                devices.recordHeartbeat(deviceId, frame);
+                // A phone that connected without saying its version, or before the minimum was raised.
+                if (versions.isTooOld(frame.appVersion())) {
+                    reply(deviceId, ServerFrames.updateRequired(versions.minimum()));
+                    sessions.get(deviceId).ifPresent(session -> session.close(DeviceSessionRegistry.UPDATE_REQUIRED));
+                }
+            }
             case "ack" -> messages.onAccepted(deviceId, frame.id());
             case "sent" -> {
                 messages.onSent(deviceId, frame.id());

@@ -42,6 +42,7 @@ Typing the server URL and a token by hand still works (**Create a token instead*
 ```
 GET wss://<gateway>/v1/device/ws
 Authorization: Bearer usgd_...
+X-App-Version: 1.0.0
 ```
 
 - The token comes from the pairing above, or is created by hand in the dashboard and shown once.
@@ -49,6 +50,11 @@ Authorization: Bearer usgd_...
 - The token is only accepted in the header, never in the URL, where proxies would log it.
 - One connection per device: a new connection closes the previous one (close code `4000`).
 - Revoking a device closes its connection (close code `4001`); the app must stop reconnecting.
+- `X-App-Version` is the version of the app (from 1.0.0). When the gateway sets a minimum
+  (`GATEWAY_MINIMUM_APP_VERSION`), an older version is refused with `426 Upgrade Required` and the header
+  `X-Minimum-App-Version`; a phone already connected that reports an older `appVersion` in its heartbeat gets an
+  `update_required` frame, then close code `4002`. In both cases the app must stop reconnecting and ask to update.
+  A version is compared number by number (1.10.0 comes after 1.9.2); a phone that sends no version is accepted.
 
 All frames are JSON text frames with a `type` field. Unknown fields must be ignored by both sides, so that
 the protocol can grow without breaking older apps.
@@ -108,6 +114,14 @@ The device must not log `body`: it often holds a one-time code.
 ```
 
 `code` is `INVALID_FRAME` (not JSON), `MISSING_ID` or `UNKNOWN_TYPE`.
+
+### `update_required`
+
+```json
+{"type": "update_required", "minimumVersion": "1.2.0"}
+```
+
+This version of the app is no longer accepted. Sent just before the connection is closed with code `4002`.
 
 ## Device → gateway
 

@@ -24,6 +24,14 @@ public final class ServerFrames {
     public record Error(String type, String code, UUID id) {
     }
 
+    /** Sent before closing the connection of a version the gateway no longer accepts (close code 4002). */
+    public record UpdateRequired(String type, String minimumVersion) {
+    }
+
+    public static UpdateRequired updateRequired(String minimumVersion) {
+        return new UpdateRequired("update_required", minimumVersion);
+    }
+
     public static Hello hello(UUID deviceId, Instant now, int maxInFlight, DeviceService.Profile profile) {
         return new Hello("hello", deviceId, now.toString(), maxInFlight,
                 profile.deviceName(), profile.organizationName(), profile.plan());

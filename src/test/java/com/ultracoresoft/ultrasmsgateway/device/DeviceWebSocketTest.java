@@ -145,13 +145,20 @@ class DeviceWebSocketTest extends IntegrationTest {
     static final class FakeDevice extends TextWebSocketHandler {
 
         private final BlockingQueue<String> received = new LinkedBlockingQueue<>();
-        private WebSocketSession session;
+        WebSocketSession session;
         private tools.jackson.databind.json.JsonMapper json = tools.jackson.databind.json.JsonMapper.builder().build();
 
         static FakeDevice connect(int port, String token) throws Exception {
+            return connect(port, token, null);
+        }
+
+        static FakeDevice connect(int port, String token, String appVersion) throws Exception {
             FakeDevice device = new FakeDevice();
             WebSocketHttpHeaders headers = new WebSocketHttpHeaders();
             headers.add("Authorization", "Bearer " + token);
+            if (appVersion != null) {
+                headers.add("X-App-Version", appVersion);
+            }
             device.session = new StandardWebSocketClient()
                     .execute(device, headers, URI.create("ws://localhost:" + port + "/v1/device/ws"))
                     .get(5, TimeUnit.SECONDS);

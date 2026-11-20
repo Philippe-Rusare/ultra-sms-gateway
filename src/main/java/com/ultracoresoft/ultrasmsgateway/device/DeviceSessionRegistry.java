@@ -18,6 +18,7 @@ public class DeviceSessionRegistry {
 
     static final CloseStatus REPLACED = new CloseStatus(4000, "Replaced by a newer connection");
     static final CloseStatus REVOKED = new CloseStatus(4001, "Device revoked");
+    static final CloseStatus UPDATE_REQUIRED = new CloseStatus(4002, "Update required");
 
     private final ConcurrentMap<UUID, DeviceSession> sessions = new ConcurrentHashMap<>();
 
