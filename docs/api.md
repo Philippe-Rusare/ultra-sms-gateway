@@ -162,3 +162,9 @@ Errors are [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem documents
   "errors": { "to": "must be an E.164 number, e.g. +243812345678" }
 }
 ```
+
+## Suspended organization
+
+While an organization is suspended by the operator of the gateway, every call with one of its keys answers `403`
+with a problem document (`"detail": "This organization is suspended."`). Nothing is deleted: the keys work again
+once the organization is reactivated.

@@ -33,6 +33,17 @@ public class Organization {
     @Column(nullable = false)
     private Instant createdAt;
 
+    /** Set while the organization is suspended: its API answers 403 and its phones are refused. */
+    private Instant suspendedAt;
+
+    /** Why, as the organization's members are told; null when not suspended. */
+    @Column(length = 200)
+    private String suspensionReason;
+
+    public boolean isSuspended() {
+        return suspendedAt != null;
+    }
+
     public Organization(UUID id, String name, Instant createdAt) {
         this.id = id;
         this.name = name;

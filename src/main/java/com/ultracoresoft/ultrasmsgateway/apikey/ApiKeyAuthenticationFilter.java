@@ -27,10 +27,18 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
 
     private final ApiKeyService apiKeys;
     private final AuthenticationEntryPoint entryPoint;
+    private final java.util.function.Predicate<java.util.UUID> suspended;
 
     public ApiKeyAuthenticationFilter(ApiKeyService apiKeys, AuthenticationEntryPoint entryPoint) {
+        this(apiKeys, entryPoint, organizationId -> false);
+    }
+
+    /** {@code suspended} tells whether an organization is suspended: its keys are then refused with 403. */
+    public ApiKeyAuthenticationFilter(ApiKeyService apiKeys, AuthenticationEntryPoint entryPoint,
+                                      java.util.function.Predicate<java.util.UUID> suspended) {
         this.apiKeys = apiKeys;
         this.entryPoint = entryPoint;
+        this.suspended = suspended;
     }
 
     @Override
@@ -45,6 +53,14 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
         if (principal.isEmpty()) {
             SecurityContextHolder.clearContext();
             entryPoint.commence(request, response, new BadCredentialsException("Invalid API key"));
+            return;
+        }
+        if (suspended.test(principal.get().organizationId())) {
+            SecurityContextHolder.clearContext();
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setContentType("application/problem+json");
+            response.getWriter().write("""
+                    {"type":"about:blank","title":"Forbidden","status":403,"detail":"This organization is suspended."}""");
             return;
         }
         UsernamePasswordAuthenticationToken authentication = UsernamePasswordAuthenticationToken.authenticated(

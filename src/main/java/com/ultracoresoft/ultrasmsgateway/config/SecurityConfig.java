@@ -30,14 +30,15 @@ class SecurityConfig {
 
     @Bean
     @Order(1)
-    SecurityFilterChain clientApiChain(HttpSecurity http, ApiKeyService apiKeys) throws Exception {
+    SecurityFilterChain clientApiChain(HttpSecurity http, ApiKeyService apiKeys,
+                                       com.ultracoresoft.ultrasmsgateway.organization.OrganizationSuspensions suspensions) throws Exception {
         ProblemAuthenticationEntryPoint entryPoint = new ProblemAuthenticationEntryPoint();
         return http
                 .securityMatcher("/v1/messages/**")
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-                .addFilterBefore(new ApiKeyAuthenticationFilter(apiKeys, entryPoint), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new ApiKeyAuthenticationFilter(apiKeys, entryPoint, suspensions::isSuspended), UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(errors -> errors.authenticationEntryPoint(entryPoint))
                 .build();
     }

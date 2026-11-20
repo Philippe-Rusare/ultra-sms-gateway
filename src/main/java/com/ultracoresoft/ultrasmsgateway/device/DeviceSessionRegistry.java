@@ -19,6 +19,7 @@ public class DeviceSessionRegistry {
     static final CloseStatus REPLACED = new CloseStatus(4000, "Replaced by a newer connection");
     static final CloseStatus REVOKED = new CloseStatus(4001, "Device revoked");
     static final CloseStatus UPDATE_REQUIRED = new CloseStatus(4002, "Update required");
+    static final CloseStatus SUSPENDED = new CloseStatus(4003, "Organization suspended");
 
     private final ConcurrentMap<UUID, DeviceSession> sessions = new ConcurrentHashMap<>();
 
@@ -51,6 +52,14 @@ public class DeviceSessionRegistry {
         DeviceSession session = sessions.remove(deviceId);
         if (session != null) {
             session.close(REVOKED);
+        }
+    }
+
+    /** Closes the connection of a phone whose organization is suspended; it keeps trying, refused until reactivated. */
+    public void suspend(UUID deviceId) {
+        DeviceSession session = sessions.get(deviceId);
+        if (session != null) {
+            session.close(SUSPENDED);
         }
     }
 }

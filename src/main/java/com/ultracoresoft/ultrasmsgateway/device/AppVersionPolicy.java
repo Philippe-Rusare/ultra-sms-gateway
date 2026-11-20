@@ -20,20 +20,24 @@ public class AppVersionPolicy {
         this.minimum = minimum == null ? "" : minimum.trim();
     }
 
-    /** The minimum version, or an empty string when there is none. */
+    /**
+     * The minimum version, or an empty string when there is none. An edition may override it to read the minimum
+     * from somewhere else (the hosted edition lets its operators change it without a redeployment).
+     */
     public String minimum() {
         return minimum;
     }
 
     public boolean isTooOld(String appVersion) {
-        return !minimum.isEmpty() && appVersion != null && !appVersion.isBlank() && compare(appVersion, minimum) < 0;
+        String current = minimum();
+        return current != null && !current.isBlank() && appVersion != null && !appVersion.isBlank() && compare(appVersion, current.trim()) < 0;
     }
 
     /**
      * Compares two versions number by number: 1.10.0 comes after 1.9.2. What follows the numbers ({@code -debug},
      * {@code -beta}) is ignored, and a missing number counts as 0 (1.2 is 1.2.0).
      */
-    static int compare(String a, String b) {
+    public static int compare(String a, String b) {
         int[] left = numbers(a);
         int[] right = numbers(b);
         for (int i = 0; i < Math.max(left.length, right.length); i++) {

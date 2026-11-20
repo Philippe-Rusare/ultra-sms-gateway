@@ -29,6 +29,8 @@ public class DeviceHandshakeInterceptor implements HandshakeInterceptor {
 
     private final DeviceService devices;
     private final AppVersionPolicy versions;
+    private final DeviceRepository deviceRepository;
+    private final com.ultracoresoft.ultrasmsgateway.organization.OrganizationSuspensions suspensions;
 
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler handler,
@@ -40,6 +42,11 @@ public class DeviceHandshakeInterceptor implements HandshakeInterceptor {
         Optional<UUID> deviceId = devices.authenticate(token);
         if (deviceId.isEmpty()) {
             response.setStatusCode(HttpStatus.UNAUTHORIZED);
+            return false;
+        }
+        // A suspended organization: refused until it is reactivated; the phone keeps trying (docs/device-protocol.md).
+        if (deviceRepository.findById(deviceId.get()).map(device -> suspensions.isSuspended(device.getOrganizationId())).orElse(false)) {
+            response.setStatusCode(HttpStatus.FORBIDDEN);
             return false;
         }
         // Checked once the phone is known, so that the answer tells nothing to an unknown caller.

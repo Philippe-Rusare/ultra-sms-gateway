@@ -50,6 +50,9 @@ X-App-Version: 1.0.0
 - The token is only accepted in the header, never in the URL, where proxies would log it.
 - One connection per device: a new connection closes the previous one (close code `4000`).
 - Revoking a device closes its connection (close code `4001`); the app must stop reconnecting.
+- A phone of a **suspended organization** is refused with `403` during the handshake; one already connected is
+  closed with code `4003`. The app keeps retrying with its usual delays: it comes back by itself once the
+  organization is reactivated.
 - `X-App-Version` is the version of the app (from 1.0.0). When the gateway sets a minimum
   (`GATEWAY_MINIMUM_APP_VERSION`), an older version is refused with `426 Upgrade Required` and the header
   `X-Minimum-App-Version`; a phone already connected that reports an older `appVersion` in its heartbeat gets an
