@@ -36,6 +36,18 @@ class DevicePairingController {
     @SecurityRequirements
     @PostMapping("/v1/device/pair")
     ResponseEntity<?> pair(@RequestBody PairRequest request) {
+        try {
+            return complete(request);
+        } catch (DeviceLimitReachedException e) {
+            // 409: the code is fine, the organization has no room for this phone (its plan).
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                    .body(ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+                            "This organization already uses every phone its plan allows (" + e.limit() + ")."));
+        }
+    }
+
+    private ResponseEntity<?> complete(PairRequest request) {
         return pairings.complete(request.code())
                 .<ResponseEntity<?>>map(device -> ResponseEntity.ok(new PairResponse(
                         device.deviceId(), device.name(), device.token(), deviceUrl())))

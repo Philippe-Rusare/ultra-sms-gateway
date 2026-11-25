@@ -7,6 +7,7 @@ import com.ultracoresoft.ultrasmsgateway.common.Issued;
 import com.ultracoresoft.ultrasmsgateway.device.Device;
 import com.ultracoresoft.ultrasmsgateway.device.DevicePairing;
 import com.ultracoresoft.ultrasmsgateway.device.DevicePairingService;
+import com.ultracoresoft.ultrasmsgateway.device.DeviceLimitReachedException;
 import com.ultracoresoft.ultrasmsgateway.device.DeviceService;
 import com.ultracoresoft.ultrasmsgateway.device.DeviceSessionRegistry;
 import com.ultracoresoft.ultrasmsgateway.message.MessageEventRepository;
@@ -70,7 +71,8 @@ class DashboardController {
     private final OrganizationContext organization;
     private final DevicePairingService pairings;
 
-    record DeviceView(Device device, boolean online) {
+    /** A phone of the list; {@code paused} when it is past the phones its organization's plan allows. */
+    record DeviceView(Device device, boolean online, boolean paused) {
     }
 
     @GetMapping("/login")
@@ -157,8 +159,13 @@ class DashboardController {
 
     @GetMapping("/devices")
     String deviceList(@RequestParam(defaultValue = "0") int page, @RequestParam(required = false) Integer size, Model model) {
-        Page<Device> result = devices.page(organization.currentOrganizationId(), PageSizes.request(page, size));
-        model.addAttribute("page", result.map(device -> new DeviceView(device, sessions.isOnline(device.getId()))));
+        UUID organizationId = organization.currentOrganizationId();
+        Page<Device> result = devices.page(organizationId, PageSizes.request(page, size));
+        DeviceService.Allowance allowance = devices.allowance(organizationId);
+        java.util.Set<UUID> receiving = allowance.limit() == null ? null : devices.receiving(organizationId);
+        model.addAttribute("allowance", allowance);
+        model.addAttribute("page", result.map(device -> new DeviceView(device, sessions.isOnline(device.getId()),
+                receiving != null && device.isActive() && !receiving.contains(device.getId()))));
         model.addAttribute("serverUrl", ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path("/v1/device/ws").toUriString().replaceFirst("^http", "ws"));
         return "devices";
@@ -169,7 +176,13 @@ class DashboardController {
         if (!validName(name, redirect)) {
             return "redirect:/devices";
         }
-        Issued<Device> issued = devices.create(organization.currentOrganizationId(), name);
+        Issued<Device> issued;
+        try {
+            issued = devices.create(organization.currentOrganizationId(), name);
+        } catch (DeviceLimitReachedException e) {
+            redirect.addFlashAttribute("errorKey", "gw.error.device.limit");
+            return "redirect:/devices";
+        }
         redirect.addFlashAttribute("issuedName", issued.value().getName());
         redirect.addFlashAttribute("issuedSecret", issued.secret());
         return "redirect:/devices";
@@ -181,7 +194,13 @@ class DashboardController {
         if (!validName(name, redirect)) {
             return "redirect:/devices";
         }
-        Issued<DevicePairing> issued = pairings.start(organization.currentOrganizationId(), name);
+        Issued<DevicePairing> issued;
+        try {
+            issued = pairings.start(organization.currentOrganizationId(), name);
+        } catch (DeviceLimitReachedException e) {
+            redirect.addFlashAttribute("errorKey", "gw.error.device.limit");
+            return "redirect:/devices";
+        }
         String link = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString();
         redirect.addFlashAttribute("pairingLink", PAIRING_SCHEME + "?server="
                 + URLEncoder.encode(link, StandardCharsets.UTF_8) + "&code=" + issued.secret());
@@ -282,8 +301,11 @@ class DashboardController {
     }
 
     private List<DeviceView> deviceViews() {
-        return devices.list(organization.currentOrganizationId()).stream()
-                .map(device -> new DeviceView(device, sessions.isOnline(device.getId())))
+        UUID organizationId = organization.currentOrganizationId();
+        java.util.Set<UUID> receiving = devices.allowance(organizationId).limit() == null ? null : devices.receiving(organizationId);
+        return devices.list(organizationId).stream()
+                .map(device -> new DeviceView(device, sessions.isOnline(device.getId()),
+                        receiving != null && device.isActive() && !receiving.contains(device.getId())))
                 .toList();
     }
 

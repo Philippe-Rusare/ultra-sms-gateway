@@ -35,6 +35,11 @@ Content-Type: application/json
 A code that is unknown, expired or already used gets `404` with a problem document. The device is created
 in the organization of the person who started the pairing.
 
+An edition that limits the phones of an organization (a `DeviceLimit` bean, such as the hosted edition and its
+plans) answers `409` with a problem document when the organization already has every phone it may have; the code
+stays unused. Past a lower limit (a cheaper plan), the phones paired first keep working and the others are paused:
+they stay connected but get no `send` frame.
+
 Typing the server URL and a token by hand still works (**Create a token instead**).
 
 ## Connection

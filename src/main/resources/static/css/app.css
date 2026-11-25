@@ -445,3 +445,8 @@ h2.with-icon svg { width: 18px; height: 18px; fill: var(--accent); }
 .pager-size { padding: 2px 8px; border-radius: 6px; color: var(--text); font-variant-numeric: tabular-nums; }
 .pager-size:hover { text-decoration: none; color: var(--accent); }
 .pager-size.current { background: var(--surface); border: 1px solid var(--border); font-weight: 600; }
+
+/* Phones of the plan, under the title of the Devices page; red when no phone can be added. */
+.device-allowance { margin: 6px 0 0; color: var(--muted, #5b6478); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.device-allowance.is-full span { color: #c0392b; font-weight: 600; }
+.device-allowance a { font-weight: 600; }

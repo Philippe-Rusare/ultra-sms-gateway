@@ -33,7 +33,7 @@ class DeviceProfileTest {
             beans.addBean("plans" + i, sources[i]);
         }
         return new DeviceService(repository, organizations, beans.getBeanProvider(DevicePlanSource.class),
-                mock(DeviceSessionRegistry.class), Clock.systemUTC());
+                new StaticListableBeanFactory().getBeanProvider(DeviceLimit.class), mock(DeviceSessionRegistry.class), Clock.systemUTC());
     }
 
     @Test

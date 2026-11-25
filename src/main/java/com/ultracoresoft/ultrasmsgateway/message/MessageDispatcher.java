@@ -1,6 +1,7 @@
 package com.ultracoresoft.ultrasmsgateway.message;
 
 import com.ultracoresoft.ultrasmsgateway.config.GatewayProperties;
+import com.ultracoresoft.ultrasmsgateway.device.DeviceService;
 import com.ultracoresoft.ultrasmsgateway.device.DeviceSession;
 import com.ultracoresoft.ultrasmsgateway.device.DeviceSessionRegistry;
 import com.ultracoresoft.ultrasmsgateway.device.ServerFrames;
@@ -24,6 +25,7 @@ public class MessageDispatcher {
     private final DeviceSessionRegistry sessions;
     private final MessageService messages;
     private final GatewayProperties properties;
+    private final DeviceService devices;
 
     private final ReentrantLock lock = new ReentrantLock();
     private final AtomicBoolean requested = new AtomicBoolean();
@@ -71,6 +73,10 @@ public class MessageDispatcher {
         int maxInFlight = properties.dispatch().maxInFlightPerDevice();
         for (DeviceSession session : sessions.all()) {
             if (!session.isOpen()) {
+                continue;
+            }
+            // A phone past the limit of its organization's plan is paused: connected, but given nothing.
+            if (!devices.mayReceive(session.deviceId())) {
                 continue;
             }
             int free = maxInFlight - (int) messages.inFlight(session.deviceId());

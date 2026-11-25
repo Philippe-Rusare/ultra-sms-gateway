@@ -27,9 +27,13 @@ public class DevicePairingService {
     public record PairedDevice(UUID deviceId, String name, String token) {
     }
 
-    /** Starts a pairing. The returned secret is the code to show as a QR code; it is not stored. */
+    /**
+     * Starts a pairing. The returned secret is the code to show as a QR code; it is not stored. Refused with
+     * {@link DeviceLimitReachedException} when the organization has no room for another phone.
+     */
     @Transactional
     public Issued<DevicePairing> start(UUID organizationId, String deviceName) {
+        devices.checkRoomFor(organizationId);
         String code = Secrets.generate(CODE_PREFIX);
         Instant now = clock.instant();
         DevicePairing pairing = new DevicePairing();
@@ -43,7 +47,8 @@ public class DevicePairingService {
 
     /**
      * Exchanges a code for a new device in the organization that created the code.
-     * Empty when the code is unknown, expired or already used.
+     * Empty when the code is unknown, expired or already used; {@link DeviceLimitReachedException} when the
+     * organization reached its limit meanwhile (the code stays unused).
      */
     @Transactional
     public Optional<PairedDevice> complete(String code) {

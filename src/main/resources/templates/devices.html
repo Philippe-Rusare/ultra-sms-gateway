@@ -8,6 +8,10 @@
         <div>
             <h1 th:text="#{gw.devices.title}">Devices</h1>
             <p class="muted" th:text="#{gw.devices.intro}">Intro</p>
+            <p th:if="${allowance.limit != null}" class="small device-allowance" th:classappend="${allowance.full()} ? 'is-full'">
+                <span th:text="#{gw.devices.limit(${allowance.used}, ${allowance.limit})}">1 of 1 phones in your plan</span>
+                <a th:if="${allowance.upgradePath != null}" th:href="@{${allowance.upgradePath}}" th:text="#{gw.devices.limit.upgrade}">Change plan</a>
+            </p>
         </div>
         <button type="button" data-dialog="add-device" th:text="#{gw.devices.add}">Add a device</button>
     </div>
@@ -31,6 +35,7 @@
                     <span class="device-name"><strong th:text="${d.name}">Phone</strong>
                         <span th:text="(${d.appVersion} != null ? #{gw.devices.app(${d.appVersion})} + ' · ' : '') + ${d.tokenPrefix} + '…'">App 0.2.0 · usgd_…</span></span>
                     <span th:if="${!d.active}" class="badge status-failed" th:text="#{gw.state.revoked}">Revoked</span>
+                    <span th:if="${view.paused}" class="badge status-dispatched" th:title="#{gw.devices.paused.hint}" th:text="#{gw.devices.paused}">Paused</span>
                     <span th:if="${d.active and @appVersionPolicy.isTooOld(d.appVersion)}" class="badge status-dispatched"
                           th:title="#{gw.devices.update.hint(${@appVersionPolicy.minimum()})}" th:text="#{gw.devices.update}">Update needed</span>
                     <th:block th:if="${d.active}"><span th:replace="~{phone-ui :: state-badge(${view.online})}"></span></th:block>

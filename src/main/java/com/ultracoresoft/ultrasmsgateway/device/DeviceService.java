@@ -5,9 +5,13 @@ import com.ultracoresoft.ultrasmsgateway.common.Secrets;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.OptionalInt;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import com.ultracoresoft.ultrasmsgateway.organization.Organization;
 import com.ultracoresoft.ultrasmsgateway.organization.OrganizationRepository;
@@ -25,6 +29,7 @@ public class DeviceService {
     private final DeviceRepository repository;
     private final OrganizationRepository organizations;
     private final ObjectProvider<DevicePlanSource> plans;
+    private final ObjectProvider<DeviceLimit> limits;
     private final DeviceSessionRegistry sessions;
     private final Clock clock;
 
@@ -42,8 +47,68 @@ public class DeviceService {
                 .orElse(new Profile(null, null, null));
     }
 
+    /**
+     * How many active phones the organization has and how many it may have ({@code limit} null: no limit).
+     *
+     * @param upgradePath where the limit can be raised, or null
+     */
+    public record Allowance(long used, Integer limit, String upgradePath) {
+
+        /** No phone can be added. */
+        public boolean full() {
+            return limit != null && used >= limit;
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public Allowance allowance(UUID organizationId) {
+        OptionalInt limit = limitOf(organizationId);
+        return new Allowance(repository.countByOrganizationIdAndRevokedAtIsNull(organizationId),
+                limit.isPresent() ? Integer.valueOf(limit.getAsInt()) : null,
+                limits.stream().findFirst().flatMap(DeviceLimit::upgradePath).orElse(null));
+    }
+
+    /** Refuses when the organization already has every phone its limit allows. */
+    public void checkRoomFor(UUID organizationId) {
+        Allowance allowance = allowance(organizationId);
+        if (allowance.full()) {
+            throw new DeviceLimitReachedException(allowance.limit());
+        }
+    }
+
+    /**
+     * The active phones of the organization that receive messages: all of them without a limit, otherwise the first
+     * ones paired, as many as the limit allows. The others are paused.
+     */
+    @Transactional(readOnly = true)
+    public Set<UUID> receiving(UUID organizationId) {
+        OptionalInt limit = limitOf(organizationId);
+        Pageable first = limit.isPresent() ? PageRequest.of(0, Math.max(limit.getAsInt(), 1)) : Pageable.unpaged();
+        List<Device> active = repository.findByOrganizationIdAndRevokedAtIsNullOrderByCreatedAtAsc(organizationId, first);
+        if (limit.isPresent() && limit.getAsInt() <= 0) {
+            return Set.of();
+        }
+        return active.stream().map(Device::getId).collect(Collectors.toSet());
+    }
+
+    /** Whether this phone may be given messages (false for a paused phone, see {@link #receiving}). */
+    @Transactional(readOnly = true)
+    public boolean mayReceive(UUID deviceId) {
+        return repository.findById(deviceId)
+                .filter(Device::isActive)
+                .map(device -> limitOf(device.getOrganizationId()).isEmpty()
+                        || receiving(device.getOrganizationId()).contains(deviceId))
+                .orElse(false);
+    }
+
+    private OptionalInt limitOf(UUID organizationId) {
+        return limits.stream().findFirst().map(limit -> limit.maxDevices(organizationId)).orElse(OptionalInt.empty());
+    }
+
+    /** Adds a phone; refused with {@link DeviceLimitReachedException} past the limit of the organization. */
     @Transactional
     public Issued<Device> create(UUID organizationId, String name) {
+        checkRoomFor(organizationId);
         String token = Secrets.generate(TOKEN_PREFIX);
         Device device = new Device();
         device.setOrganizationId(organizationId);
