@@ -4,6 +4,8 @@
 <body>
 <header th:replace="~{fragments :: nav('devices')}"></header>
 <main>
+    <!-- The banner of the page (our offers, or an ad on the free plan), above the title as on the overview. -->
+    <th:block th:replace="~{extensions :: page-top}"></th:block>
     <div class="page-head">
         <div>
             <h1 th:text="#{gw.devices.title}">Devices</h1>
@@ -15,7 +17,6 @@
         </div>
         <button type="button" data-dialog="add-device" th:text="#{gw.devices.add}">Add a device</button>
     </div>
-    <th:block th:replace="~{extensions :: page-top}"></th:block>
 
     <th:block th:replace="~{fragments :: error}"></th:block>
     <div th:replace="~{fragments :: issued('gw.issued.device')}"></div>

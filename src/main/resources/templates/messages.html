@@ -4,8 +4,9 @@
 <body>
 <header th:replace="~{fragments :: nav('messages')}"></header>
 <main>
-    <h1 th:text="#{gw.messages.title}">Messages</h1>
+    <!-- The banner of the page (our offers, or an ad on the free plan), above the title as on the overview. -->
     <th:block th:replace="~{extensions :: page-top}"></th:block>
+    <h1 th:text="#{gw.messages.title}">Messages</h1>
 
     <form th:action="@{/messages}" method="get" class="filters">
         <label><span th:text="#{gw.messages.filter.status}">Status</span>

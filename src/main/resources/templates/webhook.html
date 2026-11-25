@@ -4,6 +4,8 @@
 <body>
 <header th:replace="~{fragments :: nav('webhooks')}"></header>
 <main>
+    <!-- The banner of the page (our offers, or an ad on the free plan), above the title as on the overview. -->
+    <th:block th:replace="~{extensions :: page-top}"></th:block>
     <p><a th:href="@{/webhooks}" th:text="#{gw.webhooks.back}">← Webhooks</a></p>
     <div class="page-head">
         <div>
@@ -17,7 +19,6 @@
             <button type="button" data-dialog="edit-webhook" th:text="#{gw.webhooks.edit}">Edit</button>
         </div>
     </div>
-    <th:block th:replace="~{extensions :: page-top}"></th:block>
 
     <th:block th:replace="~{fragments :: error}"></th:block>
     <div th:replace="~{fragments :: issued('gw.issued.webhook')}"></div>
