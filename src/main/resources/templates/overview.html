@@ -18,6 +18,7 @@
             <p th:if="${total == 0}" th:text="#{gw.hero.none.text}">Open the app on the phone and scan the QR code.</p>
             <p th:if="${total > 0}">
                 <span th:text="#{gw.hero.summary(${onlineCount}, ${total})}">2 of 3 phones online</span> ·
+                <th:block th:if="${allowance.limit != null}"><span th:text="#{gw.hero.plan(${allowance.limit})}">5 phones in your plan</span> ·</th:block>
                 <span th:text="${lastMessageAt} != null ? #{gw.hero.last(${@fmt.time(lastMessageAt)})} : #{gw.hero.nomsg}">last SMS at 10:34</span>
             </p>
         </div>
@@ -49,7 +50,8 @@
             <span><strong th:text="${failed24h}">2</strong><span th:text="#{gw.kpi.failed}">Failed</span></span></a>
         <a class="kpi kpi-online" th:href="@{/devices}">
             <span class="kpi-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zM11 18h2"/></svg></span>
-            <span><strong th:text="${onlineCount} + ' / ' + ${#lists.size(devices)}">2 / 3</strong><span th:text="#{gw.kpi.online}">Phones online</span></span></a>
+            <span><strong th:text="${onlineCount} + ' / ' + ${#lists.size(devices)}">2 / 3</strong><span th:text="#{gw.kpi.online}">Phones online</span>
+                <small class="kpi-plan" th:if="${allowance.limit != null}" th:text="#{gw.kpi.plan(${allowance.used}, ${allowance.limit})}">1 of 5 in your plan</small></span></a>
     </section>
 
     <div class="overview-row">

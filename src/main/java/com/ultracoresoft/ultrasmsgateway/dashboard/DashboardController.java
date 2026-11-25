@@ -101,6 +101,8 @@ class DashboardController {
         List<DeviceView> activeDevices = deviceList.stream().filter(view -> view.device().isActive()).toList();
         model.addAttribute("devices", activeDevices);
         model.addAttribute("onlineCount", activeDevices.stream().filter(DeviceView::online).count());
+        // How many phones the organization's plan allows, next to how many it has (no limit: nothing shown).
+        model.addAttribute("allowance", devices.allowance(organization.currentOrganizationId()));
         // The last messages, as the live activity of the app.
         List<SmsMessage> recent = messages.findAll(filter(organizationId, null, ""),
                 PageRequest.of(0, RECENT_SIZE, Sort.by(Sort.Direction.DESC, "createdAt"))).getContent();
