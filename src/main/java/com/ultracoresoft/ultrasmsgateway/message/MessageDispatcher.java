@@ -75,8 +75,14 @@ public class MessageDispatcher {
             if (!session.isOpen()) {
                 continue;
             }
-            // A phone past the limit of its organization's plan is paused: connected, but given nothing.
-            if (!devices.mayReceive(session.deviceId())) {
+            // A phone past the limit of its organization's plan is paused: connected, but given nothing. It is told
+            // when that changes (a plan bought or ended, another phone revoked), so that the app shows it.
+            var pause = devices.pauseState(session.deviceId());
+            if (!Boolean.valueOf(pause.paused()).equals(session.toldPaused())) {
+                session.send(com.ultracoresoft.ultrasmsgateway.device.ServerFrames.pause(pause));
+                session.toldPaused(pause.paused());
+            }
+            if (pause.paused()) {
                 continue;
             }
             int free = maxInFlight - (int) messages.inFlight(session.deviceId());

@@ -26,6 +26,17 @@ public final class DeviceSession {
         this.json = json;
     }
 
+    /** The pause state last told to the phone, so that it is told again only when it changes (null: not told yet). */
+    private volatile Boolean toldPaused;
+
+    public Boolean toldPaused() {
+        return toldPaused;
+    }
+
+    public void toldPaused(boolean paused) {
+        this.toldPaused = paused;
+    }
+
     public UUID deviceId() {
         return deviceId;
     }

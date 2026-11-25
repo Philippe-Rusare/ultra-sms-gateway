@@ -104,5 +104,11 @@ class DeviceLimitTest {
         assertThat(devices.mayReceive(first.getId())).isTrue();
         assertThat(devices.mayReceive(third.getId())).isFalse();
         assertThat(service().mayReceive(third.getId())).isTrue();
+
+        DeviceService.PauseState pause = devices.pauseState(third.getId());
+        assertThat(pause.paused()).isTrue();
+        assertThat(pause.limit()).isEqualTo(1);
+        assertThat(pause.active()).containsExactly("Phone 1");
+        assertThat(devices.pauseState(first.getId()).paused()).isFalse();
     }
 }

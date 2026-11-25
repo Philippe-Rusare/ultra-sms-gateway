@@ -37,6 +37,10 @@ public class DeviceWebSocketHandler extends TextWebSocketHandler {
         sessions.register(session);
         devices.markConnected(deviceId);
         session.send(ServerFrames.hello(deviceId, clock.instant(), properties.dispatch().maxInFlightPerDevice(), devices.profile(deviceId)));
+        // Then whether it is paused (past its plan's phones), so that the app shows it at once.
+        DeviceService.PauseState pause = devices.pauseState(deviceId);
+        session.send(ServerFrames.pause(pause));
+        session.toldPaused(pause.paused());
         log.info("Device {} connected", deviceId);
         dispatcher.onDeviceConnected(session);
     }

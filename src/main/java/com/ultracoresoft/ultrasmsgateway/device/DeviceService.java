@@ -91,6 +91,29 @@ public class DeviceService {
         return active.stream().map(Device::getId).collect(Collectors.toSet());
     }
 
+    /**
+     * Whether a phone is paused, past the phones its organization's plan allows, with what the app shows: the limit
+     * and the names of the phones that do send (the first ones paired).
+     */
+    public record PauseState(boolean paused, Integer limit, List<String> active) {
+
+        static final PauseState NONE = new PauseState(false, null, List.of());
+    }
+
+    @Transactional(readOnly = true)
+    public PauseState pauseState(UUID deviceId) {
+        return repository.findById(deviceId).filter(Device::isActive).map(device -> {
+            OptionalInt limit = limitOf(device.getOrganizationId());
+            if (limit.isEmpty()) {
+                return PauseState.NONE;
+            }
+            List<Device> first = repository.findByOrganizationIdAndRevokedAtIsNullOrderByCreatedAtAsc(
+                    device.getOrganizationId(), PageRequest.of(0, Math.max(limit.getAsInt(), 1)));
+            boolean paused = limit.getAsInt() <= 0 || first.stream().noneMatch(d -> d.getId().equals(deviceId));
+            return new PauseState(paused, limit.getAsInt(), paused ? first.stream().map(Device::getName).toList() : List.of());
+        }).orElse(PauseState.NONE);
+    }
+
     /** Whether this phone may be given messages (false for a paused phone, see {@link #receiving}). */
     @Transactional(readOnly = true)
     public boolean mayReceive(UUID deviceId) {

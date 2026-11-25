@@ -79,6 +79,16 @@ class DeviceWebSocketTest extends IntegrationTest {
     }
 
     @Test
+    void afterHelloThePhoneIsToldWhetherItIsPaused() throws Exception {
+        device = FakeDevice.connect(port, deviceToken);
+        assertThat(device.nextFrame().path("type").asString()).isEqualTo("hello");
+        JsonNode pause = device.nextFrame();
+        assertThat(pause.path("type").asString()).isEqualTo("pause");
+        // The open-source gateway has no plans: never paused.
+        assertThat(pause.path("paused").asBoolean()).isFalse();
+    }
+
+    @Test
     void helloTellsThePhoneItsNameAndOrganization() throws Exception {
         device = FakeDevice.connect(port, deviceToken);
         JsonNode hello = device.next();
@@ -170,7 +180,16 @@ class DeviceWebSocketTest extends IntegrationTest {
             received.add(message.getPayload());
         }
 
+        /** The next frame, past the "pause" frames (read with {@link #nextFrame} when a test is about them). */
         JsonNode next() throws InterruptedException {
+            JsonNode frame = nextFrame();
+            while ("pause".equals(frame.path("type").asString())) {
+                frame = nextFrame();
+            }
+            return frame;
+        }
+
+        JsonNode nextFrame() throws InterruptedException {
             String frame = received.poll(5, TimeUnit.SECONDS);
             assertThat(frame).as("frame from the gateway").isNotNull();
             return json.readTree(frame);

@@ -40,6 +40,16 @@ plans) answers `409` with a problem document when the organization already has e
 stays unused. Past a lower limit (a cheaper plan), the phones paired first keep working and the others are paused:
 they stay connected but get no `send` frame.
 
+Right after `hello`, and again each time it changes, the gateway tells the phone whether it is paused:
+
+```json
+{"type": "pause", "paused": true, "limit": 1, "active": ["Comptoir"]}
+```
+
+`limit` is the number of phones the plan allows (null without a limit) and `active` the names of the phones that
+do send (empty when the phone is not paused). The app shows a "paused" screen instead of "online", and comes back
+by itself when a `pause` frame says `"paused": false`. A gateway without plans always sends `"paused": false`.
+
 Typing the server URL and a token by hand still works (**Create a token instead**).
 
 ## Connection

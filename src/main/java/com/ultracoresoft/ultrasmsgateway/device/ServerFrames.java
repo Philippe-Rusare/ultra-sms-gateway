@@ -18,6 +18,14 @@ public final class ServerFrames {
                         String deviceName, String organization, String plan) {
     }
 
+    /**
+     * Whether the phone is paused: past the phones its organization's plan allows, connected but given no message.
+     * Sent after {@code hello}, then each time it changes. {@code limit} and {@code active} (the phones that send)
+     * are for the app's screen; {@code limit} is null without a limit.
+     */
+    public record Pause(String type, boolean paused, Integer limit, java.util.List<String> active) {
+    }
+
     public record Send(String type, UUID id, String to, String body, String expiresAt) {
     }
 
@@ -35,6 +43,10 @@ public final class ServerFrames {
     public static Hello hello(UUID deviceId, Instant now, int maxInFlight, DeviceService.Profile profile) {
         return new Hello("hello", deviceId, now.toString(), maxInFlight,
                 profile.deviceName(), profile.organizationName(), profile.plan());
+    }
+
+    public static Pause pause(DeviceService.PauseState state) {
+        return new Pause("pause", state.paused(), state.limit(), state.active());
     }
 
     public static Send send(SmsMessage message) {
