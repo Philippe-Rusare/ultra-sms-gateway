@@ -50,8 +50,7 @@
             <span><strong th:text="${failed24h}">2</strong><span th:text="#{gw.kpi.failed}">Failed</span></span></a>
         <a class="kpi kpi-online" th:href="@{/devices}">
             <span class="kpi-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1zM11 18h2"/></svg></span>
-            <span><strong th:text="${onlineCount} + ' / ' + ${#lists.size(devices)}">2 / 3</strong><span th:text="#{gw.kpi.online}">Phones online</span>
-                <small class="kpi-plan" th:if="${allowance.limit != null}" th:text="#{gw.kpi.plan(${allowance.used}, ${allowance.limit})}">1 of 5 in your plan</small></span></a>
+            <span><strong th:text="${onlineCount} + ' / ' + (${allowance.limit != null} ? ${allowance.limit} : ${#lists.size(devices)})">2 / 3</strong><span th:text="#{gw.kpi.online}">Phones online</span></span></a>
     </section>
 
     <div class="overview-row">

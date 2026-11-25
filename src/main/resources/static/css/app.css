@@ -504,4 +504,3 @@ h2.with-icon svg { width: 18px; height: 18px; fill: var(--accent); }
 .stack label.routing-choice { flex-direction: row; }
 
 /* Under "Phones online" on the overview: the phones the plan allows. */
-.kpi-plan { display: block; margin-top: 2px; font-size: 0.75rem; color: var(--muted); }
