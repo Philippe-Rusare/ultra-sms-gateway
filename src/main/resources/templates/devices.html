@@ -17,6 +17,10 @@
         </div>
         <button type="button" data-dialog="add-device" th:text="#{gw.devices.add}">Add a device</button>
     </div>
+    <nav class="sub-tabs" th:aria-label="#{gw.devices.title}" th:fragment="device-tabs(active)">
+        <a th:href="@{/devices}" th:classappend="${active == 'list'} ? 'active'" th:attrappend="aria-current=${active == 'list'} ? 'page'" th:text="#{gw.devices.tab.list}">My phones</a>
+        <a th:href="@{/devices/routing}" th:classappend="${active == 'routing'} ? 'active'" th:attrappend="aria-current=${active == 'routing'} ? 'page'" th:text="#{gw.devices.tab.routing}">Routing by operator</a>
+    </nav>
 
     <th:block th:replace="~{fragments :: error}"></th:block>
     <div th:replace="~{fragments :: issued('gw.issued.device')}"></div>
@@ -41,6 +45,8 @@
                           th:title="#{gw.devices.update.hint(${@appVersionPolicy.minimum()})}" th:text="#{gw.devices.update}">Update needed</span>
                     <th:block th:if="${d.active}"><span th:replace="~{phone-ui :: state-badge(${view.online})}"></span></th:block>
                 </div>
+                <p class="device-keys" th:if="${keysByDevice.containsKey(d.id)}"><span th:text="#{gw.devices.keys}">Keys:</span>
+                    <strong th:text="${#strings.listJoin(keysByDevice.get(d.id), ', ')}">Pharmacie</strong></p>
                 <p class="device-since" th:text="${view.online} ? #{gw.devices.connected(${@fmt.dateTime(d.lastConnectedAt)})} : (${d.lastSeenAt} != null ? #{gw.devices.seen(${@fmt.dateTime(d.lastSeenAt)})} : #{gw.devices.never})">Connected since …</p>
                 <div class="vitals on-blue">
                     <span class="vital"><svg th:replace="~{phone-ui :: sim}"></svg>

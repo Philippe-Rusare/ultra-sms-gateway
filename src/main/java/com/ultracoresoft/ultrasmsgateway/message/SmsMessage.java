@@ -61,6 +61,14 @@ public class SmsMessage {
     @Column(length = 200)
     private String failureReason;
 
+    /** The network of the recipient, by the prefix of the number; set when a phone takes the message. */
+    @Column(length = 20)
+    private String recipientNetwork;
+
+    /** The network of the phone that took the message (its SIM). */
+    @Column(length = 20)
+    private String sentNetwork;
+
     @Column(nullable = false)
     private Instant createdAt;
 

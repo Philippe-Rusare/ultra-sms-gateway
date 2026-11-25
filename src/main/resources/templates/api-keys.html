@@ -19,11 +19,11 @@
 
     <div class="table-wrap">
     <table>
-        <thead><tr><th th:text="#{gw.col.name}">Name</th><th th:text="#{gw.col.key}">Key</th><th th:text="#{gw.col.state}">State</th>
+        <thead><tr><th th:text="#{gw.col.name}">Name</th><th th:text="#{gw.col.key}">Key</th><th th:text="#{gw.col.state}">State</th><th th:text="#{gw.keys.col.phones}">Phones</th>
             <th th:text="#{gw.col.created}">Created</th><th th:text="#{gw.col.lastused}">Last used</th>
             <th class="actions"><span class="visually-hidden" th:text="#{gw.col.actions}">Actions</span></th></tr></thead>
         <tbody>
-        <tr th:if="${page.empty}" class="empty-row"><td colspan="6" th:text="#{gw.keys.empty}">No API key yet.</td></tr>
+        <tr th:if="${page.empty}" class="empty-row"><td colspan="7" th:text="#{gw.keys.empty}">No API key yet.</td></tr>
         <tr th:each="k : ${page.content}">
             <td th:text="${k.name}">app</td>
             <td class="mono small" th:text="${k.keyPrefix} + '…'">usg_…</td>
@@ -31,9 +31,20 @@
                 <span th:if="${k.active}" class="badge status-delivered" th:text="#{gw.state.active}">Active</span>
                 <span th:unless="${k.active}" class="badge status-failed" th:text="#{gw.state.revoked}">Revoked</span>
             </td>
+            <td th:with="tied=${ties.get(k.id)}">
+                <span th:if="${tied == null}" class="muted small" th:text="#{gw.keys.phones.all}">All phones</span>
+                <span th:if="${tied != null}" class="key-chips">
+                    <span th:each="p : ${phones}" th:if="${tied.contains(p.id)}" class="key-chip">
+                        <i th:class="${p.online} ? 'is-online' : ''"></i><span th:text="${p.name}">Phone</span></span>
+                </span>
+                <p th:if="${k.active and offlineKeys.contains(k.id)}"
+                   class="key-warning small" th:text="#{gw.keys.phones.offline}">None of its phones is online.</p>
+            </td>
             <td th:text="${@fmt.dateTime(k.createdAt)}">—</td>
             <td th:text="${@fmt.dateTime(k.lastUsedAt)}">—</td>
             <td class="actions">
+                <button th:if="${k.active and keyPhones != 'none' and !#lists.isEmpty(phones)}" type="button" class="secondary small"
+                        th:data-dialog="'phones-' + ${k.id}" th:text="#{gw.keys.phones.edit}">Phones</button>
                 <button type="button" class="secondary small" data-dialog="rename-key"
                         th:data-action="@{/api-keys/{id}/rename(id=${k.id})}" th:data-set-name="${k.name}"
                         th:text="#{gw.common.rename}">Rename</button>
@@ -60,6 +71,10 @@
                     <p class="muted" th:text="#{gw.keys.create.intro}">Intro</p>
                     <label><span th:text="#{gw.common.name}">Name</span>
                         <input type="text" name="name" maxlength="100" th:placeholder="#{gw.keys.create.placeholder}" required autofocus></label>
+                    <th:block th:replace="~{:: phones(${null})}"></th:block>
+                    <p class="muted small" th:if="${keyPhones == 'none' and keyUpgradePath != null}">
+                        <span th:text="#{gw.keys.phones.locked}">Reserve a key to a phone: higher plan.</span>
+                        <a th:href="@{${keyUpgradePath}}" th:text="#{gw.keys.phones.upgrade}">See the plans</a></p>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="secondary" data-dialog-close th:text="#{gw.common.cancel}">Cancel</button>
@@ -68,6 +83,27 @@
             </form>
         </div>
     </dialog>
+
+    <th:block th:each="k : ${page.content}" th:if="${k.active and keyPhones != 'none' and !#lists.isEmpty(phones)}">
+    <dialog class="modal" th:id="'phones-' + ${k.id}" th:aria-label="#{gw.keys.phones.edit}">
+        <div class="modal-box">
+            <div class="modal-head">
+                <h2 th:text="#{gw.keys.phones.title(${k.name})}">Phones of the key</h2>
+                <button type="button" class="link modal-close" data-dialog-close th:aria-label="#{gw.common.close}">×</button>
+            </div>
+            <form th:action="@{/api-keys/{id}/devices(id=${k.id})}" method="post">
+                <div class="modal-body stack">
+                    <p class="muted" th:text="#{gw.keys.phones.intro}">Its SMS go out only from these phones.</p>
+                    <th:block th:replace="~{:: phones(${ties.get(k.id)})}"></th:block>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="secondary" data-dialog-close th:text="#{gw.common.cancel}">Cancel</button>
+                    <button type="submit" th:text="#{gw.keys.phones.save}">Save</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+    </th:block>
 
     <dialog class="modal modal-small" id="rename-key" aria-labelledby="rename-key-title">
         <div class="modal-box">
@@ -87,5 +123,25 @@
         </div>
     </dialog>
 </main>
+<!--/* The choice of the phones of a key, in the creation and the edition. */-->
+<th:block th:if="${false}">
+<th:block th:fragment="phones(chosen)">
+    <fieldset class="key-phones" th:if="${keyPhones != 'none' and !#lists.isEmpty(phones)}">
+        <legend th:text="${keyPhones == 'one'} ? #{gw.keys.phones.one} : #{gw.keys.phones.many}">Phones of this key</legend>
+        <label class="key-phone" th:if="${keyPhones == 'one'}">
+            <input type="radio" name="devices" value="" th:checked="${chosen == null or chosen.isEmpty()}">
+            <span><strong th:text="#{gw.keys.phones.all}">All phones</strong><small th:text="#{gw.keys.phones.all.hint}">Including later ones</small></span></label>
+        <label class="key-phone" th:each="p : ${phones}">
+            <input th:type="${keyPhones == 'one'} ? 'radio' : 'checkbox'" name="devices" th:value="${p.id}"
+                   th:checked="${chosen != null and chosen.contains(p.id)}">
+            <span><strong th:text="${p.name}">Phone</strong><small th:text="${p.online} ? #{gw.state.online} : #{gw.state.offline}">Online</small></span>
+            <span class="key-phone-net" th:if="${p.network != null}" th:text="${p.network}">Vodacom</span></label>
+        <p class="muted small" th:if="${keyPhones == 'many'}" th:text="#{gw.keys.phones.many.hint}">None ticked: every phone.</p>
+        <p class="muted small" th:if="${keyPhones == 'one' and keyUpgradePath != null}">
+            <span th:text="#{gw.keys.phones.more}">Several phones per key: higher plan.</span>
+            <a th:href="@{${keyUpgradePath}}" th:text="#{gw.keys.phones.upgrade}">See the plans</a></p>
+    </fieldset>
+</th:block>
+</th:block>
 </body>
 </html>

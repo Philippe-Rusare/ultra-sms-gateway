@@ -450,3 +450,55 @@ h2.with-icon svg { width: 18px; height: 18px; fill: var(--accent); }
 .device-allowance { margin: 6px 0 0; color: var(--muted, #5b6478); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .device-allowance.is-full span { color: #c0392b; font-weight: 600; }
 .device-allowance a { font-weight: 600; }
+
+/* Téléphones: the two tabs (my phones, routing by operator). */
+.sub-tabs { display: flex; gap: 4px; margin: 4px 0 18px; border-bottom: 1px solid var(--border); }
+.sub-tabs a { padding: 10px 16px; color: var(--muted); font-weight: 600; text-decoration: none; }
+.sub-tabs a.active { color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+/* The keys tied to a phone, on its card. */
+.device-keys { position: relative; margin: 8px 0 0; font-size: 0.82rem; color: #eaf0ff; }
+
+/* API keys: the phones of a key (creation, edition, list). */
+.key-phones { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.key-phones legend { font-weight: 600; margin-bottom: 8px; padding: 0; }
+.key-phone { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px; cursor: pointer; }
+.key-phone:has(input:checked) { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
+.key-phone input { width: auto; margin: 0; }
+.key-phone > span:not(.key-phone-net) { display: flex; flex-direction: column; }
+.key-phone small { color: var(--muted); }
+.key-phone-net { margin-left: auto; font-size: 0.8rem; color: var(--muted); }
+.key-chips { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.key-chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border: 1px solid var(--border); border-radius: 999px; font-size: 0.82rem; }
+.key-chip i { width: 8px; height: 8px; border-radius: 50%; background: #9aa5c7; }
+.key-chip i.is-online { background: #2bd47d; }
+.key-warning { margin: 6px 0 0; color: var(--danger); font-weight: 600; }
+
+/* Routing by operator. */
+.routing-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; align-items: start; }
+.routing-main, .routing-side { display: flex; flex-direction: column; gap: 14px; }
+.routing-main .panel, .routing-side .panel { margin-top: 0; }
+.routing-switch { display: flex; gap: 20px; justify-content: space-between; align-items: flex-start; }
+.routing-switch h2, .routing-side h2, .routing-main h2 { margin: 0 0 6px; font-size: 1rem; }
+.routing-side ul { margin: 0; padding-left: 18px; line-height: 1.6; }
+.routing-choice { display: flex; gap: 10px; align-items: flex-start; margin-top: 12px; cursor: pointer; }
+.routing-choice input { width: auto; margin-top: 3px; }
+.routing-choice span { display: flex; flex-direction: column; }
+.routing-choice small { color: var(--muted); }
+.routing-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.routing-stats div { background: var(--bg); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; }
+.routing-stats strong { font-size: 1.4rem; }
+.routing-stats span { font-size: 0.82rem; color: var(--muted); }
+.routing-locked { max-width: 620px; }
+/* A checkbox drawn as a switch; its label stays for screen readers. */
+.switch { position: relative; display: inline-flex; cursor: pointer; flex: none; }
+.switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.switch span { width: 44px; height: 26px; border-radius: 999px; background: #cfd5e3; font-size: 0; position: relative; transition: background .2s; }
+.switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 3px rgba(0, 0, 0, .2); }
+.switch input:checked + span { background: var(--accent); }
+.switch input:checked + span::after { transform: translateX(18px); }
+.switch input:focus-visible + span { outline: 3px solid #9db8ff; outline-offset: 2px; }
+@media (max-width: 960px) { .routing-layout { grid-template-columns: 1fr; } }
+/* In a dialog, form labels stack their content: a phone row stays on one line. */
+.stack label.key-phone, .modal label.key-phone { flex-direction: row; align-items: center; text-align: left; gap: 12px; }
+.stack label.key-phone input, .modal label.key-phone input { width: auto; flex: none; }
+.stack label.routing-choice { flex-direction: row; }

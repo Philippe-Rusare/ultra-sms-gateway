@@ -70,6 +70,7 @@ class DashboardController {
     private final Formats formats;
     private final OrganizationContext organization;
     private final DevicePairingService pairings;
+    private final com.ultracoresoft.ultrasmsgateway.apikey.KeyDevices keyDevices;
 
     /** A phone of the list; {@code paused} when it is past the phones its organization's plan allows. */
     record DeviceView(Device device, boolean online, boolean paused) {
@@ -164,6 +165,7 @@ class DashboardController {
         DeviceService.Allowance allowance = devices.allowance(organizationId);
         java.util.Set<UUID> receiving = allowance.limit() == null ? null : devices.receiving(organizationId);
         model.addAttribute("allowance", allowance);
+        model.addAttribute("keysByDevice", keyDevices.keysByDevice(organizationId));
         model.addAttribute("page", result.map(device -> new DeviceView(device, sessions.isOnline(device.getId()),
                 receiving != null && device.isActive() && !receiving.contains(device.getId()))));
         model.addAttribute("serverUrl", ServletUriComponentsBuilder.fromCurrentContextPath()
@@ -246,17 +248,27 @@ class DashboardController {
 
     @GetMapping("/api-keys")
     String apiKeyList(@RequestParam(defaultValue = "0") int page, @RequestParam(required = false) Integer size, Model model) {
-        model.addAttribute("page", apiKeys.page(organization.currentOrganizationId(),
-                PageSizes.request(page, size)));
+        UUID organizationId = organization.currentOrganizationId();
+        model.addAttribute("page", apiKeys.page(organizationId, PageSizes.request(page, size)));
+        KeyPhonesController.addKeyPhones(model, organizationId, devices, sessions, keyDevices);
         return "api-keys";
     }
 
     @PostMapping("/api-keys")
-    String createApiKey(@RequestParam String name, RedirectAttributes redirect) {
+    String createApiKey(@RequestParam String name, @RequestParam(required = false) List<UUID> devices,
+                        RedirectAttributes redirect) {
         if (!validName(name, redirect)) {
             return "redirect:/api-keys";
         }
         Issued<ApiKey> issued = apiKeys.create(organization.currentOrganizationId(), name);
+        if (devices != null && !devices.isEmpty()) {
+            // The phones of the key: refused past the plan's limit, the key then uses every phone.
+            try {
+                keyDevices.set(organization.currentOrganizationId(), issued.value().getId(), devices);
+            } catch (IllegalArgumentException e) {
+                redirect.addFlashAttribute("errorKey", "gw.keys.phones.error");
+            }
+        }
         redirect.addFlashAttribute("issuedName", issued.value().getName());
         redirect.addFlashAttribute("issuedSecret", issued.secret());
         return "redirect:/api-keys";

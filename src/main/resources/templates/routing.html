@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<!-- Téléphones › Routage par opérateur (KeyPhonesController): each SMS from a phone of the recipient's network. -->
+<head th:replace="~{fragments :: head(#{gw.routing.title})}"></head>
+<body>
+<header th:replace="~{fragments :: nav('devices')}"></header>
+<main>
+    <th:block th:replace="~{extensions :: page-top}"></th:block>
+    <div class="page-head">
+        <div>
+            <h1 th:text="#{gw.devices.title}">Devices</h1>
+            <p class="muted" th:text="#{gw.routing.intro}">Intro</p>
+        </div>
+    </div>
+    <nav th:replace="~{devices :: device-tabs('routing')}"></nav>
+    <th:block th:replace="~{fragments :: error}"></th:block>
+
+    <section th:if="${!allowed}" class="panel routing-locked">
+        <h2 th:text="#{gw.routing.locked.title}">Routing by operator</h2>
+        <p class="muted" th:text="#{gw.routing.locked.text}">Available with a higher plan.</p>
+        <a th:if="${upgradePath != null}" class="button-secondary" th:href="@{${upgradePath}}" th:text="#{gw.keys.phones.upgrade}">See the plans</a>
+    </section>
+
+    <form th:if="${allowed}" th:action="@{/devices/routing}" method="post" class="routing-layout">
+        <div class="routing-main">
+            <section class="panel routing-switch">
+                <div>
+                    <h2 th:text="#{gw.routing.switch.title}">Send each SMS from the recipient's network</h2>
+                    <p class="muted" th:text="#{gw.routing.switch.text}">Text</p>
+                </div>
+                <label class="switch"><input type="checkbox" name="enabled" value="true" th:checked="${settings.enabled}"><span th:text="#{gw.routing.switch.on}">On</span></label>
+            </section>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th th:text="#{gw.routing.col.network}">Network</th><th th:text="#{gw.routing.col.numbers}">Numbers</th>
+                        <th th:text="#{gw.routing.col.phones}">Phones of this network</th><th th:text="#{gw.routing.col.from}">The SMS goes from</th></tr></thead>
+                    <tbody>
+                    <tr th:each="n : ${networks}">
+                        <td><strong th:text="${n.network.label()}">Vodacom</strong></td>
+                        <td class="mono small" th:text="'+243 ' + ${#strings.listJoin(n.prefixes, ', ')}">+243 81, 82, 83</td>
+                        <td>
+                            <span th:if="${#lists.isEmpty(n.phones)}" class="key-warning small" th:text="#{gw.routing.nophone}">No phone of this network</span>
+                            <span class="key-chips"><span th:each="p : ${n.phones}" class="key-chip"><i th:class="${p.online} ? 'is-online' : ''"></i><span th:text="${p.name}">Phone</span></span></span>
+                        </td>
+                        <td><span th:if="${!#lists.isEmpty(n.phones)}" class="badge status-delivered" th:text="#{gw.routing.same}">Same network</span>
+                            <span th:if="${#lists.isEmpty(n.phones)}" class="badge status-dispatched" th:text="#{gw.routing.other}">Another phone</span></td>
+                    </tr>
+                    <tr><td><strong class="muted" th:text="#{gw.routing.others}">Other numbers</strong></td><td colspan="3" class="muted small" th:text="#{gw.routing.others.text}">Any phone.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <section class="panel">
+                <h2 th:text="#{gw.routing.fallback.title}">When no phone of the right network is online</h2>
+                <label class="routing-choice"><input type="radio" name="fallback" value="ANY" th:checked="${settings.fallback.name() == 'ANY'}">
+                    <span><strong th:text="#{gw.routing.fallback.any}">Send it with another phone</strong><small th:text="#{gw.routing.fallback.any.text}">Text</small></span></label>
+                <label class="routing-choice"><input type="radio" name="fallback" value="WAIT" th:checked="${settings.fallback.name() == 'WAIT'}">
+                    <span><strong th:text="#{gw.routing.fallback.wait}">Wait for a phone of the right network</strong><small th:text="#{gw.routing.fallback.wait.text}">Text</small></span></label>
+            </section>
+            <div class="form-actions"><button type="submit" th:text="#{gw.routing.save}">Save</button></div>
+        </div>
+        <aside class="routing-side">
+            <section class="panel">
+                <h2 th:text="#{gw.routing.how.title}">How the network is known</h2>
+                <ul class="muted small">
+                    <li th:text="#{gw.routing.how.recipient}">Recipient: by the prefix.</li>
+                    <li th:text="#{gw.routing.how.phone}">Phone: by its SIM.</li>
+                    <li th:text="#{gw.routing.how.ported}">Kept numbers.</li>
+                    <li th:text="#{gw.routing.how.keys}">Keys tied to phones.</li>
+                </ul>
+            </section>
+            <section class="panel">
+                <h2 th:text="#{gw.routing.month.title}">This month</h2>
+                <div class="routing-stats">
+                    <div><strong th:text="${stats.samePercent() != null} ? ${stats.samePercent()} + ' %' : '—'">86 %</strong><span th:text="#{gw.routing.month.same}">from the same network</span></div>
+                    <div><strong th:text="${stats.otherNetwork}">142</strong><span th:text="#{gw.routing.month.other}">from another network</span></div>
+                </div>
+            </section>
+        </aside>
+    </form>
+</main>
+</body>
+</html>

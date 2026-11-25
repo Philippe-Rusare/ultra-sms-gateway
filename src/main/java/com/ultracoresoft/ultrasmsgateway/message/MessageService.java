@@ -51,9 +51,11 @@ public class MessageService {
     private final Clock clock;
     private final TransactionTemplate transaction;
     private final WebhookService webhooks;
+    private final MessageRouter router;
 
     public MessageService(SmsMessageRepository messages, MessageEventRepository events, DeviceRepository devices,
-                          GatewayProperties properties, Clock clock, TransactionTemplate transaction, WebhookService webhooks) {
+                          GatewayProperties properties, Clock clock, TransactionTemplate transaction, WebhookService webhooks,
+                          MessageRouter router) {
         this.messages = messages;
         this.events = events;
         this.devices = devices;
@@ -61,6 +63,7 @@ public class MessageService {
         this.clock = clock;
         this.transaction = transaction;
         this.webhooks = webhooks;
+        this.router = router;
     }
 
     // ---------------------------------------------------------------- client API
@@ -142,9 +145,20 @@ public class MessageService {
             return List.of();
         }
         Instant now = clock.instant();
+        // Oldest first, among those this phone may take: not of a key tied to other phones, and with routing by
+        // operator, not one a phone of the recipient's network should take (MessageRouter).
+        MessageRouter.Plan plan = router.plan(device.get().getOrganizationId());
         List<SmsMessage> batch = messages.findByOrganizationIdAndStatusAndExpiresAtAfterOrderByCreatedAtAsc(
-                device.get().getOrganizationId(), QUEUED, now, Limit.of(max));
+                        device.get().getOrganizationId(), QUEUED, now, Limit.of(Math.max(max * 20, 100))).stream()
+                .filter(message -> router.mayTake(plan, device.get(), message))
+                .limit(max)
+                .toList();
+        String sentNetwork = com.ultracoresoft.ultrasmsgateway.device.Network.ofOperator(device.get().getOperatorName())
+                .map(Enum::name).orElse(null);
         for (SmsMessage message : batch) {
+            message.setRecipientNetwork(com.ultracoresoft.ultrasmsgateway.device.Network.ofRecipient(message.getRecipient())
+                    .map(Enum::name).orElse(null));
+            message.setSentNetwork(sentNetwork);
             message.setDeviceId(deviceId);
             message.setDispatchedAt(now);
             message.setAttempts(message.getAttempts() + 1);
